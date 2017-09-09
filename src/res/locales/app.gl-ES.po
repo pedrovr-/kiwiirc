@@ -1,0 +1,487 @@
+#: Close
+msgid "close"
+msgstr "Pechar"
+
+#: Connect
+msgid "connect"
+msgstr "Conectar"
+
+#: Connecting...
+msgid "connecting"
+msgstr "Conectando..."
+
+#: Connected
+msgid "connected"
+msgstr "Conectado"
+
+#: Settings
+msgid "settings"
+msgstr "Axustes"
+
+#: Banned
+msgid "banned"
+msgstr "Usuarios baneados"
+
+#: Notifications
+msgid "notifications"
+msgstr "Notificacións"
+
+#: Username
+msgid "username"
+msgstr "Nome de usuario"
+
+#: Password
+msgid "password"
+msgstr "Contrasinal"
+
+#: I have a password
+msgid "password_have"
+msgstr "Teño contrasinal"
+
+#: Server
+msgid "server"
+msgstr "Servidor"
+
+#: Nick (Nickname)
+msgid "nick"
+msgstr "Alcume"
+
+#: Channel
+msgid "channel"
+msgstr "Sala"
+
+#: Network
+msgid "network"
+msgstr "Rede"
+
+#: ZNC
+msgid "znc"
+msgstr "ZNC"
+
+#: Logging in...
+msgid "logging_in"
+msgstr "Verificando credenciais..."
+
+#: Invalid login
+msgid "invalid_login"
+msgstr "Credenciais inválidas"
+
+#: Realname field in a users whois
+msgid "whois_realname"
+msgstr "Nome real"
+
+#: Away status in a users whois
+msgid "whois_status"
+msgstr "Estado"
+
+#: Away status in a users whois
+msgid "whois_status_available"
+msgstr "Está dispoñible"
+
+#: Send user a message button
+msgid "send_a_message"
+msgstr "Envía unha mensaxe"
+
+#: Show more information
+msgid "more_information"
+msgstr "Máis información"
+
+#: Ignore user toggle box
+msgid "ignore_user"
+msgstr "Ignorar usuario"
+
+#: Channel input box
+msgid "connection_channel"
+msgstr "Sala"
+
+#: General Title
+msgid "settings_general"
+msgstr "Xeral"
+
+#: Theme Title
+msgid "settings_theme"
+msgstr "Tema"
+
+#: Theme URL
+msgid "settings_themeurl"
+msgstr "URL do tema"
+
+#: Use Monospace
+msgid "settings_use_monospace"
+msgstr "Usar fonte Monospace"
+
+#: Show autocomplete list
+msgid "settings_show_autocomplete"
+msgstr "Mostrar lista autocompletado"
+
+#: Messages Title
+msgid "settings_messages_title"
+msgstr "Mensaxes"
+
+#: Show timestamps
+msgid "settings_timestamps"
+msgstr "Mostrar hora"
+
+#: Use 24-hour timestamps
+msgid "settings_24hour_timestamps"
+msgstr "Mostrar hora en formato 24 horas"
+
+#: Show emoticons
+msgid "settings_emoticons"
+msgstr "Mostrar emoticonos"
+
+#: Block new Private messages
+msgid "settings_block_private"
+msgstr "Bloquear novas mensaxes privadas"
+
+#: Messages in scrollback
+msgid "settings_scrollback"
+msgstr "Mensaxes no histórico"
+
+#: Extra formatting
+msgid "settings_formatting"
+msgstr "Formateado extra"
+
+#: Include join/part messages as activity
+msgid "settings_show_joinpart"
+msgstr "Incluír mensaxes de entrada e saída como actividade"
+
+#: Mute sound notifications
+msgid "settings_mute_sound"
+msgstr "Silenciar notificacións"
+
+#: Highlight on words
+msgid "settings_highlight"
+msgstr "Palabras a destacar (sepáraas cun espazo)"
+
+#: Aliases Title
+msgid "settings_aliases"
+msgstr "Alias"
+
+#: Send Message
+msgid "send_message"
+msgstr "Enviar mensaxe"
+
+#: Notify me when
+msgid "settings_notify"
+msgstr "Notificarme cando"
+
+#: All messages
+msgid "settings_notify_all"
+msgstr "Todas as mensaxes"
+
+#: I am mentioned
+msgid "settings_notify_mentioned"
+msgstr "Fun mencionado"
+
+#: Never
+msgid "settings_notify_never"
+msgstr "Nunca"
+
+#: Mute sounds
+msgid "settings_notify_mute"
+msgstr "Deshabilitar sons"
+
+#: Refresh banlist
+msgid "bans_refresh"
+msgstr "Actualizar lista de baneos"
+
+#: Banned user
+msgid "bans_user"
+msgstr "Usuario baneado"
+
+#: Banned by
+msgid "bans_by"
+msgstr "Baneado por"
+
+#: Refreshing banlist
+msgid "bans_refreshing"
+msgstr "Actualizando lista de baneos"
+
+#: Nobody is banned
+msgid "bans_nobody"
+msgstr "Ninguén está baneado"
+
+#: Topic
+msgid "channel_topic"
+msgstr "Tópico"
+
+#: Moderated chat
+msgid "channel_moderated"
+msgstr "Sala moderada"
+
+#: Invite Only
+msgid "channel_invite"
+msgstr "Necesítase invitación para entrar"
+
+#: Moderated topic
+msgid "channel_moderated_topic"
+msgstr "Só os moderadores poden cambiar o tópico"
+
+#: Block external messages
+msgid "channel_external"
+msgstr "Bloquear mensaxes externas"
+
+#: Welcome to Kiwi IRC!
+msgid "container_welcome"
+msgstr "¡Benvido a Kiwi IRC! Selecciona unha sala da esquerda."
+
+#: Show statebrowser
+msgid "container_statebrowser"
+msgstr "Mostrar barra estado do navegador"
+
+#: Join Channel
+msgid "container_join"
+msgstr "Entrar a unha sala"
+
+#: Not connected
+msgid "container_notconnected"
+msgstr "Desconectado"
+
+#: Private conversation with
+msgid "container_privmsg"
+msgstr "Conversación privada con {{user}}"
+
+#: input wrap placeholder
+msgid "input_placeholder"
+msgstr "Enviar unha mensaxe..."
+
+#: Loading
+msgid "media_loading"
+msgstr "Cargando {{url}}..."
+
+#: Load previous
+msgid "messages_load"
+msgstr "Cargar mensaxes anteriores"
+
+#: NetworkSettings $t('settings_')
+msgid "settings_server_details"
+msgstr "Detalles do servidor"
+
+#: Port
+msgid "settings_port"
+msgstr "Porto"
+
+#: Other networks on this ZNC account
+msgid "settings_znc_other"
+msgstr "Outras redes nesta conta ZNC serán listadas na lista de redes"
+
+#: Your details
+msgid "settings_your_details"
+msgstr "Os teus detalles"
+
+#: Nickname
+msgid "settings_nickname"
+msgstr "Alcume"
+
+#: Advanced
+msgid "settings_advanced"
+msgstr "Avanzado"
+
+#: Encoding
+msgid "settings_encoding"
+msgstr "Codificación"
+
+#: Show Raw
+msgid "settings_show_raw"
+msgstr "Mostrar o orixinal"
+
+#: Run commands when connected
+msgid "settings_autorun"
+msgstr "Executa comandos ao conectar"
+
+#: Danger zone
+msgid "settings_danger"
+msgstr "Zona de perigo"
+
+#: Remove network
+msgid "settings_remove"
+msgstr "Eliminar rede"
+
+#: Person key
+msgid "person"
+msgstr "{{count}} usuario aquí"
+
+#: Person plural key
+msgid "person_plural"
+msgstr "{{count}} usuarios aquí"
+
+#: Reconnect Channel
+msgid "reconnect_channel"
+msgstr "Reconectar para entrar en {{channel}}"
+
+#: Reconnect to network
+msgid "reconnect_network"
+msgstr "Reconectar a {{network}} para empezar a chatear"
+
+#: Reconnect to query
+msgid "reconnect_query"
+msgstr "Reconectar para continuar falando con {{user}}"
+
+#: Connection settings
+msgid "reconnect_settings"
+msgstr "Configuración da conexión"
+
+#: Close options $t('side_')
+msgid "side_close"
+msgstr "Pechar opcións"
+
+#: Channel options
+msgid "side_options"
+msgstr "Opcións da sala"
+
+#: Your settings
+msgid "side_settings"
+msgstr "A túa configuración"
+
+#: Show when people join
+msgid "side_joins"
+msgstr "Mostrar cando a xente entra á sala"
+
+#: Extra message formatting
+msgid "side_formatting"
+msgstr "Formateo extra das mensaxes"
+
+#: Nick colours in the list"
+msgid "side_colours"
+msgstr "Colorear alias na lista"
+
+#: No buffer set
+msgid "side_buffer"
+msgstr "Non hai buffer configurado"
+
+#: Error starting
+msgid "error_starting"
+msgstr "Houbo un erro iniciando Kiwi IRC :("
+
+msgid "error_installed"
+msgstr "Comproba que instalaches o Kiwi IRC correctamente e que a configuración pode cargarse."
+
+#: Leave
+msgid "state_leave"
+msgstr "Saír de {{name}}"
+
+#: Your account
+msgid "state_account"
+msgstr "A túa conta"
+
+#: Your settings and networks will be remembered on this computer
+msgid "state_remembered"
+msgstr "A túa configuración e redes lembraranse neste computador."
+
+#: Forget me
+msgid "state_forget"
+msgstr "Borrar configuración"
+
+#: No networks here yet.
+msgid "state_network"
+msgstr "Aínda non configuraches ningunha rede."
+
+#: Add one?
+msgid "state_add"
+msgstr "Queres engadir unha?"
+
+#: Available networks
+msgid "state_available"
+msgstr "Redes dispoñibles"
+
+#: Configure network
+msgid "state_configure"
+msgstr "Configurar rede"
+
+#: Not connected.
+msgid "state_disconnected"
+msgstr "Desconectado."
+
+#: Join new #channel
+msgid "state_join"
+msgstr "Entrar nunha #sala nova"
+
+#: Account name
+msgid "user_account"
+msgstr "Nome da conta: {{user}}"
+
+#: Real name
+msgid "user_realname"
+msgstr "Nome real: {{realname}}"
+
+#: Is a bot
+msgid "user_bot"
+msgstr "É un robot"
+
+#: Is available for help
+msgid "user_help"
+msgstr "Está dispoñible para axudar"
+
+#: Is an operator
+msgid "user_op"
+msgstr "É un operador"
+
+#: Connected to
+msgid "user_server"
+msgstr "Conectado a {{server}} {{info}}"
+
+#: Securely connected via SSL/TLS
+msgid "user_secure"
+msgstr "Conectado de forma segura con SSL/TLS"
+
+#: Also in channels
+msgid "user_channels"
+msgstr "Está tamén nas salas {{channels}}"
+
+#: Access level
+msgid "user_access"
+msgstr "Nivel de acceso"
+
+#: Normal
+msgid "user_normal"
+msgstr "Normal"
+
+#: Kick from channel
+msgid "user_kick"
+msgstr "Expulsar da sala"
+
+#: Ban from the channel
+msgid "user_ban"
+msgstr "Banear da sala"
+
+#: Kick + Ban from the channel
+msgid "user_kickban"
+msgstr "Kick + Ban do canle"
+
+#: Your IRC client
+msgid "personal_client"
+msgstr "O teu cliente de IRC"
+
+#: Add your networks. Join your channels.
+msgid "personal_addjoin"
+msgstr "Engade as túas redes. Entra nas túas salas."
+
+#: They will be here when you come back.
+msgid "personal_return"
+msgstr "Estarán aquí cando volvas."
+
+#: Add a Network
+msgid "personal_add"
+msgstr "Engade unha Rede"
+
+#: Saved networks
+msgid "personal_saved"
+msgstr "Redes gardadas"
+
+#: Kiwi IRC (next gen) - Rizon preview
+msgid "rizon_title"
+msgstr "Kiwi IRC (nova xeración) - Previsualización Rizon"
+
+#: Direct websockets. No Kiwi server or webirc involved.
+msgid "rizon_websockets"
+msgstr "Websocket directo. Sen servidor Kiwi nin webirc."
+
+#: (Thanks to Adam @Rizon for the development websocket server support!)
+msgid "rizon_thanks"
+msgstr "(Grazas a Adam @Rizon polo desenvolvemento do soporte do websockets!)"
+
+#: Give the developer version of Kiwi IRC a try!
+msgid "rizon_dev"
+msgstr "Proba a versión en desenvolvemento do Kiwi IRC!"
+

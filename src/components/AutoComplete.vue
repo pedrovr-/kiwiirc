@@ -10,7 +10,7 @@
         >
             <template v-if="item.type === 'user'">
                 <span class="kiwi-autocomplete-item-value">{{item.text}}</span>
-                <span class="u-link kiwi-autocomplete-item-action" @click.stop="openQuery(item.text)">Send Message</span>
+                <span class="u-link kiwi-autocomplete-item-action" @click.stop="openQuery(item.text)">{{$t('send_message')}}</span>
             </template>
             <template v-else-if="item.type === 'command'">
                 <span class="kiwi-autocomplete-item-value">{{item.text}}</span>
@@ -93,27 +93,32 @@ export default {
                 return isInRange;
             });
         },
-        selectedValue: function selectedValue() {
+        selectedItem: function selectedItem() {
             let item = this.filteredItems[this.selected_idx];
-            if (!item) {
-                return '';
-            }
-
-            return item.value || item.text;
+            return item || null;
         },
     },
     methods: {
         handleOnKeyDown: function handleOnKeyDown(event) {
             let handled = false;
 
-            if (event.keyCode === 13) {
+            let cancelKeyCodes = [
+                13, // return
+                32, // space
+                188, // comma
+                190, // period
+            ];
+
+            if (cancelKeyCodes.indexOf(event.keyCode) > -1) {
                 // If no item is selected (ie. on an empty list), leave the return key
                 // to do its default action as if the autocomplete box isn't active.
-                if (!this.selectedValue) {
+                if (!this.selectedItem) {
                     this.cancel();
                 } else {
                     this.selectCurrentItem();
-                    event.preventDefault();
+                    if (event.keyCode === 13) {
+                        event.preventDefault();
+                    }
                     handled = true;
                 }
             } else if (event.keyCode === 38 || (event.keyCode === 9 && event.shiftKey)) {
@@ -127,7 +132,7 @@ export default {
 
                 event.preventDefault();
                 handled = true;
-            } else if (event.keyCode === 40 || event.keyCode === 9) {
+            } else if ((event.keyCode === 40 && !event.altKey) || event.keyCode === 9) {
                 // Down or tab
                 if (this.selected_idx < this.filteredItems.length - 1) {
                     this.selected_idx++;
@@ -147,12 +152,23 @@ export default {
             state.setActiveBuffer(buffer.networkid, buffer.name);
             this.cancel();
         },
+        tempCurrentItem: function tempCurrentItem() {
+            let item = this.selectedItem;
+            if (!item) {
+                return;
+            }
+            this.$emit('temp', item.value || item.text, item);
+        },
         selectCurrentItem: function selectCurrentItem() {
-            this.$emit('selected', this.selectedValue);
+            let item = this.selectedItem;
+            this.$emit('selected', item.value || item.text, item);
         },
         cancel: function cancel() {
             this.$emit('cancel');
         },
+    },
+    mounted: function mounted() {
+        this.tempCurrentItem();
     },
     watch: {
         selected_idx: function watchSelectedIdx() {
@@ -165,6 +181,8 @@ export default {
 
                 this.$el.scrollTop = el.offsetTop - (el.getBoundingClientRect().height * 2);
             });
+
+            this.tempCurrentItem();
         },
         filter: function watchFilter() {
             let numItems = this.filteredAndLimitedItems.length - 1;

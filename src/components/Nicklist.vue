@@ -1,16 +1,10 @@
 <template>
     <div class="kiwi-nicklist">
-        <span class="kiwi-nicklist-options" @click="settings_open = !settings_open">
-            <i class="fa fa-cog" aria-hidden="true"></i>
-        </span>
-        <div v-if="settings_open" class="kiwi-nicklist-settings">
-            <label>Show when people join <input type="checkbox" v-model="settingShowJoinParts"></label> <br />
-            <label>Nick colours in the list <input type="checkbox" v-model="settingColouredNicklist"></label>
-        </div>
-        <div class="kiwi-nicklist-info">{{buffer.users.length}} {{buffer.users.length!=1?'people':'person'}} here</div>
+        <div class="kiwi-nicklist-info">{{$t('person', {count: bufferUsers.length})}}</div>
         <ul class="kiwi-nicklist-users">
             <li
                 v-for="user in sortedUsers"
+                :key="user.nick"
                 class="kiwi-nicklist-user"
                 v-bind:class="[
                     userMode(user) ? 'kiwi-nicklist-user--mode-' + userMode(user) : '',
@@ -32,32 +26,19 @@
 
 import _ from 'lodash';
 import state from 'src/libs/state';
+import Logger from 'src/libs/Logger';
 import * as TextFormatting from 'src/helpers/TextFormatting';
 
 export default {
     data: function data() {
         return {
-            settings_open: false,
             userbox_user: null,
         };
     },
     props: ['network', 'buffer', 'users'],
     computed: {
-        settingShowJoinParts: {
-            get: function getSettingShowJoinParts() {
-                return this.buffer.setting('show_joinparts');
-            },
-            set: function setSettingShowJoinParts(newVal) {
-                return this.buffer.setting('show_joinparts', newVal);
-            },
-        },
-        settingColouredNicklist: {
-            get: function getSettingShowJoinParts() {
-                return this.buffer.setting('coloured_nicklist');
-            },
-            set: function setSettingShowJoinParts(newVal) {
-                return this.buffer.setting('coloured_nicklist', newVal);
-            },
+        bufferUsers: function bufferUsers() {
+            return _.values(this.buffer.users);
         },
         sortedUsers: function sortedUsers() {
             // Get a list of network prefixes and give them a rank number
@@ -69,10 +50,21 @@ export default {
 
             // Since vuejs will sort in-place and update views when .sort is called
             // on an array, clone it first so that we have a plain array to sort
-            let users = this.buffer.users.map(b => b);
+            let users = _.clone(this.bufferUsers);
 
             let bufferId = this.buffer.id;
             return users.sort((a, b) => {
+                if (!a.buffers[bufferId]) {
+                    let msg = 'Nicklist.sortedUsers() User A does not have the buffer in its list!';
+                    Logger.error(msg, a.nick, a.buffers);
+                    return -1;
+                }
+                if (!b.buffers[bufferId]) {
+                    let msg = 'Nicklist.sortedUsers() User B does not have the buffer in its list!';
+                    Logger.error(msg, b.nick, b.buffers);
+                    return 1;
+                }
+
                 // Neither user has a prefix, compare text
                 if (
                     a.buffers[bufferId].modes.length === 0 &&
@@ -109,11 +101,14 @@ export default {
                 return a.nick.localeCompare(b.nick);
             });
         },
+        useColouredNicks: function useColouredNicks() {
+            return this.buffer.setting('coloured_nicklist');
+        },
     },
     methods: {
-        nickStyle: function nickColour(nick) {
+        nickStyle: function nickStyle(nick) {
             let styles = {};
-            if (this.settingColouredNicklist) {
+            if (this.useColouredNicks) {
                 styles.color = TextFormatting.createNickColour(nick);
             }
             return styles;
@@ -158,12 +153,7 @@ export default {
     box-sizing: border-box;
     overflow-y: auto;
 }
-.kiwi-nicklist-options {
-    display: block;
-    margin: 3px 10px;
-    text-align: right;
-    cursor: pointer;
-}
+
 .kiwi-nicklist-users {
     list-style: none;
 }

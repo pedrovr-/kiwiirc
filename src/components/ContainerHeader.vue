@@ -8,40 +8,32 @@
     >
 
         <template v-if="isChannel()">
-            <div class="kiwi-header-options">
-                <a
-                    class="u-button u-button-secondary"
-                    @click="buffer_settings_open=!buffer_settings_open"
-                ><i class="fa fa-wrench" aria-hidden="true"></i></a>
-            </div>
             <div class="kiwi-header-name">{{buffer.name}}</div>
-            <div class="kiwi-header-topic" v-html="formatMessage(buffer.topic)"></div>
-            <div v-if="buffer.getNetwork().state === 'connected' && !buffer.joined">
-                <a @click="joinCurrentBuffer" class="u-link">Join Channel</a>
+            <div v-if="isJoined" class="kiwi-header-topic"></div>
+            <div v-if="!isJoined && isConnected" class="kiwi-header-notjoined">
+                <a @click="joinCurrentBuffer" class="u-link">{{$t('container_join')}}</a>
             </div>
         </template>
         <template v-else-if="isServer()">
-            <div class="kiwi-header-options">
-                <a
-                    class="u-button u-button-secondary"
-                    @click="showNetworkSettings(buffer.getNetwork())"
-                ><i class="fa fa-wrench" aria-hidden="true"></i></a>
-            </div>
-            <div class="kiwi-header-name">{{buffer.getNetwork().name}}</div>
-
             <div v-if="buffer.getNetwork().state === 'disconnected'" class="kiwi-header-server-connection">
-                Not connected.
-                <a @click="buffer.getNetwork().ircClient.connect()" class="u-link">Connect</a>
+                <a @click="buffer.getNetwork().ircClient.connect()" class="u-button u-button-primary">{{$t('connect')}}</a>
             </div>
             <div v-else-if="buffer.getNetwork().state === 'connecting'" class="kiwi-header-server-connection">
-                Connecting...
+                {{$t('connecting')}}
             </div>
+            <div class="kiwi-header-name">{{buffer.getNetwork().name}}</div>
         </template>
         <template v-else-if="isQuery()">
             <div class="kiwi-header-options">
-                <a class="u-button u-button-secondary" @click="closeCurrentBuffer">Close</a>
+                <a class="u-button u-button-secondary" @click="closeCurrentBuffer">{{$t('close')}}</a>
             </div>
-            <div class="kiwi-header-name">Private conversation with {{buffer.name}}</div>
+            <div class="kiwi-header-name">{{$t('container_privmsg', {user: buffer.name})}}</div>
+        </template>
+        <template v-else-if="isSpecial()">
+            <div class="kiwi-header-options">
+                <a class="u-button u-button-secondary" @click="closeCurrentBuffer">{{$t('close')}}</a>
+            </div>
+            <div class="kiwi-header-name">{{buffer.name}}</div>
         </template>
 
         <div
@@ -51,13 +43,13 @@
         >
 
             <tabbed-view>
-                <tabbed-tab :header="'Settings'" :focus="true">
+                <tabbed-tab :header="$t('settings')" :focus="true">
                     <channel-info v-bind:buffer="buffer"></channel-info>
                 </tabbed-tab>
-                <tabbed-tab :header="'Banned Users'">
+                <tabbed-tab :header="$t('banned')">
                     <channel-banlist v-bind:buffer="buffer"></channel-banlist>
                 </tabbed-tab>
-                <tabbed-tab :header="'Notifications'">
+                <tabbed-tab :header="$t('notifications')">
                     <buffer-settings v-bind:buffer="buffer"></buffer-settings>
                 </tabbed-tab>
             </tabbed-view>
@@ -73,7 +65,6 @@
 
 import _ from 'lodash';
 import state from 'src/libs/state';
-import NetworkSettings from './NetworkSettings';
 import BufferSettings from './BufferSettings';
 import ChannelInfo from './ChannelInfo';
 import ChannelBanlist from './ChannelBanlist';
@@ -86,6 +77,15 @@ export default {
         };
     },
     props: ['buffer'],
+    computed: {
+        isJoined: function isJoined() {
+            let buffer = this.buffer;
+            return buffer.getNetwork().state === 'connected' && buffer.joined;
+        },
+        isConnected: function isConnected() {
+            return this.buffer.getNetwork().state === 'connected';
+        },
+    },
     components: {
         BufferSettings,
         ChannelInfo,
@@ -123,13 +123,15 @@ export default {
         isQuery: function isQuery() {
             return this.buffer.isQuery();
         },
+        isSpecial: function isSpecial() {
+            return this.buffer.isSpecial();
+        },
         showNetworkSettings: function showNetworkSettings(network) {
-            state.$emit('active.component', NetworkSettings, {
-                network,
-            });
+            state.$emit('network.settings', network);
         },
         joinCurrentBuffer: function joinCurrentBuffer() {
             let network = this.buffer.getNetwork();
+            this.buffer.enabled = true;
             network.ircClient.join(this.buffer.name);
         },
         closeCurrentBuffer: function closeCurrentBuffer() {
@@ -168,11 +170,15 @@ export default {
 .kiwi-header-name {
     display: inline-block;
 }
+.kiwi-header-notjoined {
+    display: inline-block;
+    margin-left: 1em;
+}
 .kiwi-header-server-settings {
     display: inline;
 }
 .kiwi-header-server-connection {
-    display: block;
+    display: inline-block;
 }
 .kiwi-header-options {
     display: inline-block;

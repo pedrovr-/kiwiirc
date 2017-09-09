@@ -1,86 +1,62 @@
 <template>
-    <div class="kiwi-welcome" v-bind:class="[is_connecting ? 'kiwi-welcome--connecting' : '']">
-        <h2 v-if="!is_connecting">{{title}}</h2>
-        <h2 v-else>Connecting... <a @click="infoClick" class="u-link"><i class="fa fa-info-circle" aria-hidden="true"></i></a></h2>
+    <div class="kiwi-customserver" v-bind:class="[is_connecting ? 'kiwi-customserver--connecting' : '']">
+        <h2 v-if="!is_connecting" v-html="title"></h2>
+        <h2 v-else>{{$t('connecting')}} <a @click="infoClick" class="u-link"><i class="fa fa-info-circle" aria-hidden="true"></i></a></h2>
 
         <transition name="connectingloader">
-        <form v-if="!is_connecting" v-on:submit.prevent="startUp" class="u-form kiwi-welcome-form">
+        <form v-if="!is_connecting" v-on:submit.prevent="startUp" class="u-form kiwi-customserver-form">
             <template v-if="server_type === 'default'">
-                <label>
-                    <span>Server</span>
-                    <input type="text" v-model="server" />
+                <input-text :label="$t('server')" v-model="server">
+                    <span class="fa-stack fa-lg kiwi-customserver-tls" :class="[tls ? 'kiwi-customserver-tls--enabled' : '']" @click="tls=!tls">
+                        <i class="fa fa-lock fa-stack-1x kiwi-customserver-tls-lock"></i>
+                        <i v-if="!tls" class="fa fa-times fa-stack-1x kiwi-customserver-tls-minus"></i>
+                    </span>
+                </input-text>
+
+                <input-text :label="$t('nick')" v-model="nick" class="kiwi-customserver-nick" />
+
+                <label class="kiwi-customserver-have-password">
+                    <input type="checkbox" v-model="show_password_box" /> {{$t('password_have')}}
                 </label>
-                <label>
-                    <span>SSL / TLS</span>
-                    <input type="checkbox" v-model="tls" />
-                </label>
-                <label>
-                    <span>Nick</span>
-                    <input type="text" v-model="nick" />
-                </label>
-                <label class="kiwi-welcome-have-password">
-                    <span></span><input type="checkbox" v-model="show_password_box" /> I have a password
-                </label>
-                <label v-if="show_password_box">
-                    <span>Password</span>
-                    <input type="password" v-model="password" />
-                </label>
-                <label class="kiwi-welcome-channel">
-                    <span>Channel</span>
-                    <input type="text" v-model="channel" />
-                </label>
+                <input-text v-if="show_password_box" :label="$t('password')" v-model="password" type="password" />
+
+                <input-text :label="$t('channel')" v-model="channel" />
             </template>
 
             <template v-if="server_type === 'default_simple'">
-                <label>
-                    <span>Nick</span>
-                    <input type="text" v-model="nick" />
+                <input-text :label="$t('nick')" v-model="nick" class="kiwi-customserver-nick" />
+
+                <label class="kiwi-customserver-have-password">
+                    <input type="checkbox" v-model="show_password_box" /> {{$t('password_have')}}
                 </label>
-                <label class="kiwi-welcome-have-password">
-                    <span></span><input type="checkbox" v-model="show_password_box" /> I have a password
-                </label>
-                <label v-if="show_password_box">
-                    <span>Password</span>
-                    <input type="password" v-model="password" />
-                </label>
-                <label class="kiwi-welcome-channel">
-                    <span>Channel</span>
-                    <input type="text" v-model="channel" />
-                </label>
+                <input-text v-if="show_password_box" :label="$t('password')" v-model="password" type="password" />
+
+                <input-text :label="$t('channel')" v-model="channel" class="kiwi-customserver-channel" />
             </template>
 
             <template v-if="server_type === 'znc'">
-                <label>
-                    <span>Server</span>
-                    <input type="text" v-model="server" />
-                </label>
-                <label>
-                    <span>SSL / TLS</span>
-                    <input type="checkbox" v-model="tls" />
-                </label>
-                <label>
-                    <span>Username</span>
-                    <input type="text" v-model="nick" />
-                </label>
-                <label>
-                    <span>Network</span>
-                    <input type="text" v-model="znc_network" />
-                </label>
-                <label>
-                    <span>Password</span>
-                    <input type="password" v-model="password" />
-                </label>
+                <input-text :label="$t('server')" v-model="server">
+                    <span class="fa-stack fa-lg kiwi-customserver-tls" :class="[tls ? 'kiwi-customserver-tls--enabled' : '']" @click="tls=!tls">
+                        <i class="fa fa-lock fa-stack-1x kiwi-customserver-tls-lock"></i>
+                        <i v-if="!tls" class="fa fa-times fa-stack-1x kiwi-customserver-tls-minus"></i>
+                    </span>
+                </input-text>
+
+                <input-text :label="$t('username')" v-model="nick" class="kiwi-customserver-nick" />
+
+                <input-text v-if="znc_network_support" :label="$t('network')" v-model="znc_network" />
+                <input-text :label="$t('password')" v-model="password" type="password" />
             </template>
 
-            <button type="submit" class="u-button u-button-primary u-submit">Connect</button>
+            <button type="submit" class="u-button u-button-primary u-submit">{{buttonText}}</button>
 
-            <div v-if="show_type_switcher" class="kiwi-welcome-server-types">
-                <a @click="server_type = 'default'" class="u-link">Network</a>
-                <a @click="server_type = 'znc'" class="u-link">ZNC</a>
+            <div v-if="show_type_switcher" class="kiwi-customserver-server-types">
+                <a @click="server_type = 'default'" class="u-link">{{$t('network')}}</a>
+                <a @click="server_type = 'znc'" class="u-link">{{$t('znc')}}</a>
             </div>
         </form>
 
-        <div v-else class="kiwi-welcome-loader">
+        <div v-else class="kiwi-customserver-loader">
             <i class="fa fa-spin fa-spinner" aria-hidden="true"></i>
         </div>
         </transition>
@@ -90,15 +66,14 @@
 <script>
 
 import _ from 'lodash';
-import * as Storage from 'src/libs/storage/Local';
 import state from 'src/libs/state';
-import StatePersistence from 'src/libs/StatePersistence';
-import logger from 'src/libs/Logger';
+import * as Misc from 'src/helpers/Misc';
 
 export default {
     data: function data() {
         return {
             title: 'Where are you connecting today?',
+            buttonText: '',
             server_type: 'default',
             server: '',
             tls: false,
@@ -107,6 +82,7 @@ export default {
             encoding: 'utf8',
             channel: '',
             znc_network: '',
+            znc_network_support: true,
             direct: false,
             show_type_switcher: true,
             show_password_box: false,
@@ -119,19 +95,25 @@ export default {
             let net;
 
             if (!this.nick) {
+                this.$el.querySelector('.kiwi-customserver-nick input').focus();
                 return;
             }
 
-            // Replace ? with a random number
-            let randomNickReplacement = Math.floor(Math.random() * 100).toString();
-            let nick = (this.nick || '').replace(/\?/g, randomNickReplacement);
+            let nick = this.nick;
 
             if (this.server_type === 'znc') {
+                // Older ZNC versions only support user:pass while newer supports user/network:pass
+                let password = nick;
+                if (this.znc_network) {
+                    password += '/' + this.znc_network;
+                }
+                password += ':' + this.password;
+
                 net = state.addNetwork('ZNC', nick, {
                     server: this.server.split(':')[0],
                     port: parseInt(this.server.split(':')[1] || 6667, 10),
                     tls: this.tls,
-                    password: nick + '/' + this.znc_network + ':' + this.password,
+                    password: password,
                 });
             } else {
                 net = state.addNetwork('Network', nick, {
@@ -147,13 +129,14 @@ export default {
             if (net) {
                 let hasSetActiveBuffer = false;
 
-                this.channel.split(',').forEach((channelName, idx) => {
-                    if (!channelName) {
-                        return;
-                    }
+                let bufferObjs = Misc.extractBuffers(this.channel);
+                bufferObjs.forEach((bufferObj, idx) => {
+                    let buffer = state.addBuffer(net.id, bufferObj.name);
+                    buffer.enabled = true;
 
-                    let buffer = state.addBuffer(net.id, channelName);
-                    buffer.joined = true;
+                    if (bufferObj.key) {
+                        buffer.key = bufferObj.key;
+                    }
 
                     if (idx === 0) {
                         state.setActiveBuffer(net.id, buffer.name);
@@ -183,6 +166,11 @@ export default {
                 net.ircClient.once('registered', onRegistered);
                 net.ircClient.once('close', onClosed);
             }
+        },
+        processNickRandomNumber: function processNickRandomNumber(nick) {
+            // Replace ? with a random number
+            let tmp = (nick || '').replace(/\?/g, () => Math.floor(Math.random() * 100).toString());
+            return _.trim(tmp);
         },
         infoClick: function infoClick() {
             if (this.connecting_net) {
@@ -237,8 +225,9 @@ export default {
                     server: m[2],
                     port: parseInt(m[4] || (tls ? 6697 : 6667), 10),
                     channels: channels,
-                    nick: (params.nick || 'kiwi_?'),
+                    nick: params.nick || '',
                     encoding: (params.encoding || 'utf8'),
+                    params: params,
                 });
             });
 
@@ -247,7 +236,7 @@ export default {
         applyDefaults: function applyDefaults() {
             this.server = state.settings.startupOptions.server;
             this.tls = state.settings.startupOptions.tls;
-            this.nick = state.settings.startupOptions.nick;
+            this.nick = this.processNickRandomNumber(state.settings.startupOptions.nick);
             this.channel = state.settings.startupOptions.channel;
             this.direct = state.settings.startupOptions.direct;
             this.encoding = state.settings.startupOptions.encoding;
@@ -261,9 +250,6 @@ export default {
         },
     },
     created: async function created() {
-        let persist = new StatePersistence('kiwi-state', state, Storage, logger);
-        await persist.loadStateIfExists();
-
         let saveThisSessionsState = false;
 
         // If we have networks from a previous state, launch directly into it
@@ -297,12 +283,25 @@ export default {
                 let con = connections[0];
                 this.server = con.server + ':' + con.port;
                 this.tls = con.tls;
-                this.nick = con.nick;
+                this.nick = this.processNickRandomNumber(con.nick);
                 this.channel = con.channels.join(',');
                 this.direct = con.direct;
                 this.encoding = con.encoding;
 
-                this.title = 'Enter a nickname to join';
+                if (con.params.type === 'znc') {
+                    // Older ZNC versions only support user:pass while newer supports
+                    // user/network:pass. Setting the network to _ denotes that we are
+                    // connecting to an older ZNC without network support.
+                    if (con.params.network === '_') {
+                        this.znc_network_support = false;
+                    } else {
+                        this.znc_network = con.params.network || '';
+                    }
+                    this.server_type = 'znc';
+                    this.title = 'Enter your password to connect to ZNC';
+                } else {
+                    this.title = 'Enter a nickname to join';
+                }
             } else if (connections.length > 1) {
                 saveThisSessionsState = false;
 
@@ -316,7 +315,7 @@ export default {
 
                     con.channels.forEach(channelName => {
                         let buffer = state.addBuffer(net.id, channelName);
-                        buffer.joined = true;
+                        buffer.enabled = true;
                     });
 
                     // Set the first server buffer active
@@ -332,8 +331,17 @@ export default {
             this.applyDefaults();
         }
 
+        if (state.settings.startupOptions.greetingText) {
+            this.title = state.settings.startupOptions.greetingText;
+        }
+        if (state.settings.startupOptions.buttonText) {
+            this.buttonText = state.settings.startupOptions.buttonText;
+        } else {
+            this.buttonText = this.$t('connect');
+        }
+
         if (saveThisSessionsState) {
-            persist.watchStateForChanges();
+            state.persistence.watchStateForChanges();
         }
     },
 };
@@ -341,44 +349,46 @@ export default {
 
 <style>
 
-.kiwi-welcome {
-    text-align: center;
-    margin-top: 1em;
+.kiwi-customserver {
+    height: 100%;
+    overflow-y: auto;
+    box-sizing: border-box;
 }
-.kiwi-welcome-start {
-    font-size: 1.1em;
-    cursor: pointer;
-}
-.kiwi-welcome-form {
+.kiwi-customserver-form {
     width: 300px;
     margin: 0 auto;
     max-height: 500px;
     overflow: hidden;
 }
-.kiwi-welcome-channel {
-    margin-top: 1em;
+.kiwi-customserver .input-text {
+    margin-bottom: 1em;
 }
-.kiwi-welcome-server-types {
-    font-size: 0.9em;
-    text-align: center;
+.kiwi-customserver-tls {
+    cursor: pointer;
+    top: 6px;
 }
-.kiwi-welcome-server-types a {
-    margin: 0 1em;
+.kiwi-customserver-tls-lock {
+    font-size: 1.2em;
+}
+.kiwi-customserver-tls-minus {
+    color: red;
+    font-size: 0.7em;
+    top: 3px;
 }
 
-.kiwi-welcome-loader {
+.kiwi-customserver-loader {
     margin-top: 1em;
     font-size: 2em;
 }
 
-.kiwi-welcome h2 {
-    margin-bottom: 1em;
+.kiwi-customserver h2 {
+    margin-bottom: 1.5em;
 }
-.kiwi-welcome h2 i {
+.kiwi-customserver h2 i {
     font-size: 0.8em;
     margin-left: 1em;
 }
-.kiwi-welcome--connecting h2 {
+.kiwi-customserver--connecting h2 {
     transition: margin-top .7s;
     margin-top: 100px;
 }
@@ -389,4 +399,5 @@ export default {
 .connectingloader-enter, .connectingloader-leave-to {
   max-height: 0
 }
+
 </style>

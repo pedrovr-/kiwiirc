@@ -9,21 +9,58 @@
             @click.stop=""
         >
             <buffer-settings v-bind:buffer="bufferForPopup"></buffer-settings>
+            <a @click="closeBuffer" class="u-link">{{$t('state_leave', {name: bufferForPopup.name})}}</a>
+        </div>
+
+        <div
+            v-if="isPersistingState"
+            class="kiwi-statebrowser-usermenu"
+            :class="[is_usermenu_open?'kiwi-statebrowser-usermenu--open':'']"
+        >
+            <a class="kiwi-statebrowser-usermenu-header" @click="is_usermenu_open=!is_usermenu_open">{{$t('state_account')}} <i class="fa fa-caret-down"></i></a>
+            <div v-if="is_usermenu_open" class="kiwi-statebrowser-usermenu-body">
+                {{$t('state_remembered')}}<br />
+                <a class="u-link" @click="clickForget">{{$t('state_forget')}}</i></a> <br />
+                <br />
+                <button class="u-button u-button-primary" @click="is_usermenu_open=false">{{$t('close')}}</button>
+            </div>
+
+            <div class="kiwi-statebrowser-divider"></div>
+        </div>
+
+        <div class="kiwi-statebrowser-switcher">
+            <a@click="clickAddNetwork" v-if="!isRestrictedServer" ><i class="fa fa-plus" aria-hidden="true"></i></a><a @click="clickAppSettings" ><i class="fa fa-cog" aria-hidden="true"></i></a>
+        </div>
+
+        <div v-if="networks.length === 0" class="kiwi-statebrowser-nonetworks">
+            {{$t('state_network')}}<br><a class="u-link" @click="clickAddNetwork">{{$t('state_add')}}</a>
+        </div>
+
+        <div v-if="Object.keys(provided_networks).length > 0" class="kiwi-statebrowser-availablenetworks">
+            <div @click="show_provided_networks=!show_provided_networks" class="kiwi-statebrowser-availablenetworks-toggle">&#8618; {{$t('state_available')}}</div>
+            <div
+                class="kiwi-statebrowser-availablenetworks-networks"
+                :class="{'kiwi-statebrowser-availablenetworks-networks--open': show_provided_networks}"
+            >
+                <div
+                    v-for="(pNets, pNetTypeName) in provided_networks"
+                    class="kiwi-statebrowser-availablenetworks-type"
+                >
+                    <div class="kiwi-statebrowser-availablenetworks-name">{{pNetTypeName}}</div>
+                    <div v-for="pNet in pNets" class="kiwi-statebrowser-availablenetworks-link" :class="[pNet.connected?'kiwi-statebrowser-availablenetworks-link--connected':'']">
+                        <a @click="connectProvidedNetwork(pNet)">{{pNet.name}}</a><br/>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="kiwi-statebrowser-scrollarea">
             <div class="kiwi-statebrowser-networks">
                 <state-browser-network
-                    v-for="network in networks"
+                    v-for="network in networksToShow"
                     :network="network"
                     @showBufferSettings="showBufferPopup"
                 ></state-browser-network>
-            </div>
-
-            <div class="kiwi-statebrowser-options">
-                <a @click="clickAddNetwork" v-if="!isRestrictedServer">Add network</a>
-                <a @click="clickAppSettings">Settings</a>
-                <a @click="clickForget" v-if="isPersistingState">Forget Me</a>
             </div>
         </div>
     </div>
@@ -34,8 +71,15 @@
 import state from 'src/libs/state';
 import StateBrowserNetwork from './StateBrowserNetwork';
 import AppSettings from './AppSettings';
-import NetworkSettings from './NetworkSettings';
 import BufferSettings from './BufferSettings';
+import NetworkProvider from 'src/libs/NetworkProvider';
+import NetworkProviderZnc from 'src/libs/networkproviders/NetworkProviderZnc';
+
+let netProv = new NetworkProvider();
+
+let znc = new NetworkProviderZnc(state);
+netProv.addProvider(znc);
+znc.autoDetectZncNetworks();
 
 export default {
     data: function data() {
@@ -45,6 +89,9 @@ export default {
             popup_networkid: null,
             popup_top: 0,
             new_channel_input: '',
+            is_usermenu_open: false,
+            show_provided_networks: false,
+            provided_networks: Object.create(null),
         };
     },
     props: ['networks'],
@@ -64,6 +111,9 @@ export default {
                 this.popup_top = domY;
             }
         },
+        closeBuffer: function closeBuffer() {
+            state.removeBuffer(this.bufferForPopup);
+        },
         onNewChannelInputFocus: function onNewChannelInputFocus() {
             // Auto insert the # if no value is already in. Easier for mobile users
             if (!this.new_channel_input) {
@@ -78,10 +128,8 @@ export default {
         },
         clickAddNetwork: function clickAddNetwork() {
             let nick = 'Guest' + Math.floor(Math.random() * 100);
-            let network = state.addNetwork('New Network', nick, {});
-            state.$emit('active.component', NetworkSettings, {
-                network,
-            });
+            let network = state.addNetwork('Network', nick, {});
+            state.$emit('network.settings', network);
         },
         clickAppSettings: function clickAppSettings() {
             state.$emit('active.component', AppSettings);
@@ -94,6 +142,17 @@ export default {
             }
 
             state.persistence.forgetState();
+            window.location.reload();
+        },
+        connectProvidedNetwork: function connectProvidedNetwork(pNet) {
+            let net = state.addNetwork(pNet.name, pNet.nick, {
+                server: pNet.server,
+                port: pNet.port,
+                tls: pNet.tls,
+                password: pNet.password,
+            });
+
+            net.ircClient.connect();
         },
     },
     computed: {
@@ -110,10 +169,18 @@ export default {
         isRestrictedServer: function isRestrictedServer() {
             return !!state.settings.restricted;
         },
+        networksToShow: function networksToShow() {
+            let bncNet = state.setting('bnc').network;
+            return this.networks.filter(network => network !== bncNet);
+        },
     },
     created: function created() {
-        state.$on('document.clicked', () => {
+        this.listen(state, 'document.clicked', () => {
             this.showBufferPopup(null);
+        });
+
+        netProv.on('networks', networks => {
+            this.provided_networks = networks;
         });
     },
 };
@@ -123,15 +190,28 @@ export default {
 .kiwi-statebrowser {
     box-sizing: border-box;
     z-index: 3; /* Must be at leats 1 higher than the workspace :after z-index; */
+    display: flex;
+    flex-direction: column;
+}
+
+.kiwi-statebrowser-usermenu-header {
+    cursor: pointer;
+}
+
+.kiwi-statebrowser-switcher {
+    text-align: center;
+}
+.kiwi-statebrowser-switcher a {
+    display: inline-block;
+    width: 50%;
 }
 
 .kiwi-statebrowser-scrollarea {
     overflow: auto;
-    height: 100%;
     width: 100%;
+    flex: 1;
 }
 .kiwi-statebrowser-networks {
-    padding-bottom: 60px; /* .kiwi-statebrowser-options height+padding */
 }
 .kiwi-statebrowser-channel {
     position: relative;
@@ -159,5 +239,22 @@ export default {
     bottom: 0;
     padding: 15px;
     height: 30px;
+}
+
+
+.kiwi-statebrowser-availablenetworks-toggle {
+    cursor: pointer;
+    text-align: center;
+}
+.kiwi-statebrowser-availablenetworks-networks {
+    overflow: hidden;
+    max-height: 0px;
+    transition: max-height 0.5s;
+}
+.kiwi-statebrowser-availablenetworks-networks--open {
+    max-height: 500px;
+}
+.kiwi-statebrowser-availablenetworks-link a {
+    cursor: pointer;
 }
 </style>

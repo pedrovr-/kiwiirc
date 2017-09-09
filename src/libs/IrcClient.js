@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import Irc from 'irc-framework/browser';
+import bouncerMiddleware from './BouncerMiddleware';
 import * as ServerConnection from './ServerConnection';
 import * as TextFormatting from 'src/helpers/TextFormatting';
 
@@ -34,18 +35,40 @@ export function create(state, networkid) {
 
     let ircClient = new Irc.Client(clientOpts);
     ircClient.use(clientMiddleware(state, networkid));
+    ircClient.use(bouncerMiddleware());
 
     // Overload the connect() function to make sure we are connecting with the
     // most recent connection details from the state
     let originalIrcClientConnect = ircClient.connect;
     ircClient.connect = function connect(...args) {
-        ircClient.options.host = network.connection.server;
-        ircClient.options.port = network.connection.port;
-        ircClient.options.tls = network.connection.tls;
-        ircClient.options.password = network.connection.password;
-        ircClient.options.nick = network.nick;
-        ircClient.options.encoding = network.connection.encoding;
+        let bnc = state.setting('bnc');
+        if (bnc.active) {
+            let netname = network.connection.bncname;
+            let password = '';
 
+            // bnccontrol is the control connection for BOUNCER commands, not a network
+            if (network.name === 'bnccontrol') {
+                password = `${bnc.username}:${bnc.password}`;
+            } else {
+                password = `${bnc.username}/${netname}:${bnc.password}`;
+            }
+
+            ircClient.options.host = bnc.server;
+            ircClient.options.port = bnc.port;
+            ircClient.options.tls = bnc.tls;
+            ircClient.options.password = password;
+            ircClient.options.nick = network.nick;
+            ircClient.options.encoding = network.connection.encoding;
+        } else {
+            ircClient.options.host = network.connection.server;
+            ircClient.options.port = network.connection.port;
+            ircClient.options.tls = network.connection.tls;
+            ircClient.options.password = network.connection.password;
+            ircClient.options.nick = network.nick;
+            ircClient.options.encoding = network.connection.encoding;
+        }
+
+        state.$emit('network.connecting', { network });
         originalIrcClientConnect.apply(ircClient, args);
     };
 
@@ -70,23 +93,27 @@ function clientMiddleware(state, networkid) {
 
     return function middlewareFn(client, rawEvents, parsedEvents) {
         parsedEvents.use(parsedEventsHandler);
-        parsedEvents.use(rawEventsHandler);
+        rawEvents.use(rawEventsHandler);
 
         client.on('connecting', () => {
+            network.state_error = '';
             network.state = 'connecting';
         });
 
         client.on('connected', () => {
+            network.state_error = '';
             network.state = 'connected';
         });
 
-        client.on('socket close', () => {
+        client.on('socket close', (err) => {
             network.state = 'disconnected';
+            network.state_error = err || '';
         });
     };
 
 
-    function rawEventsHandler(command, event, client, next) {
+    function rawEventsHandler(command, event, rawLine, client, next) {
+        state.$emit('irc:raw', command, event, network);
         next();
     }
 
@@ -117,10 +144,16 @@ function clientMiddleware(state, networkid) {
                 message: `Connected to ${client.network.name}!`,
             });
 
+            if (network.auto_commands) {
+                network.auto_commands.split('\n').forEach(line => {
+                    state.$emit('input.raw', line[0] === '/' ? line : `/${line}`);
+                });
+            }
+
             // Join our channels
             network.buffers.forEach(buffer => {
-                if (buffer.isChannel() && buffer.joined) {
-                    client.join(buffer.name);
+                if (buffer.isChannel() && buffer.enabled) {
+                    client.join(buffer.name, buffer.key);
                 }
             });
         }
@@ -185,6 +218,15 @@ function clientMiddleware(state, networkid) {
                 bufferName = event.message.substr(1, event.message.indexOf(']') - 1);
             }
 
+            // Notices from somewhere when we don't have an existing buffer for them should go into
+            // the server tab. ie. notices from servers
+            if (event.type === 'notice') {
+                let existingBuffer = state.getBufferByName(networkid, bufferName);
+                if (!existingBuffer) {
+                    bufferName = '*';
+                }
+            }
+
             let buffer = state.getOrAddBufferByName(networkid, bufferName);
 
             let textFormatType = 'privmsg';
@@ -225,7 +267,12 @@ function clientMiddleware(state, networkid) {
 
         if (command === 'join') {
             let buffer = state.getOrAddBufferByName(networkid, event.channel);
-            state.addUserToBuffer(buffer, { nick: event.nick });
+            state.addUserToBuffer(buffer, {
+                nick: event.nick,
+                username: event.ident,
+                host: event.hostname,
+                realname: event.gecos,
+            });
 
             if (event.nick === client.user.nick) {
                 buffer.joined = true;
@@ -242,7 +289,7 @@ function clientMiddleware(state, networkid) {
 
             state.addMessage(buffer, {
                 time: Date.now(),
-                nick: '',
+                nick: event.nick,
                 message: messageBody,
                 type: 'traffic',
                 type_extra: 'join',
@@ -274,7 +321,7 @@ function clientMiddleware(state, networkid) {
 
             state.addMessage(buffer, {
                 time: Date.now(),
-                nick: '',
+                nick: event.nick,
                 message: messageBody,
                 type: 'traffic',
                 type_extra: 'kick',
@@ -299,7 +346,7 @@ function clientMiddleware(state, networkid) {
             });
             state.addMessage(buffer, {
                 time: Date.now(),
-                nick: '',
+                nick: event.nick,
                 message: messageBody,
                 type: 'traffic',
                 type_extra: 'part',
@@ -326,7 +373,7 @@ function clientMiddleware(state, networkid) {
 
                 state.addMessage(buffer, {
                     time: Date.now(),
-                    nick: '',
+                    nick: event.nick,
                     message: messageBody,
                     type: 'traffic',
                     type_extra: 'quit',
@@ -388,16 +435,34 @@ function clientMiddleware(state, networkid) {
         }
 
         if (command === 'wholist') {
-            event.users.forEach(user => {
-                let userObj = {
-                    nick: user.nick,
-                    host: user.hostname || undefined,
-                    username: user.ident || undefined,
-                    away: user.away ? 'Away' : '',
-                    realname: user.real_name,
-                };
-                state.addUser(networkid, userObj);
+            state.usersTransaction(networkid, users => {
+                event.users.forEach(user => {
+                    let userObj = {
+                        nick: user.nick,
+                        host: user.hostname || undefined,
+                        username: user.ident || undefined,
+                        away: user.away ? 'Away' : '',
+                        realname: user.real_name,
+                    };
+                    state.addUser(networkid, userObj, users);
+                });
             });
+        }
+
+        if (command === 'channel list start') {
+            network.channel_list_cache = [];
+            network.channel_list_state = 'updating';
+        }
+        if (command === 'channel list') {
+            // Store the channels in channel_list_cache before moving it all to
+            // channel_list at the end. This gives a huge performance boost since
+            // it doesn't need to be all reactive for every update
+            network.channel_list_cache = network.channel_list_cache.concat(event);
+        }
+        if (command === 'channel list end') {
+            network.channel_list = network.channel_list_cache;
+            delete network.channel_list_cache;
+            network.channel_list_state = '';
         }
 
         if (command === 'motd') {
@@ -451,13 +516,18 @@ function clientMiddleware(state, networkid) {
 
         if (command === 'userlist') {
             let buffer = state.getOrAddBufferByName(networkid, event.channel);
+            let users = [];
             event.users.forEach(user => {
-                state.addUserToBuffer(buffer, {
-                    nick: user.nick,
-                    username: user.ident,
-                    hostname: user.hostname,
-                }, user.modes);
+                users.push({
+                    user: {
+                        nick: user.nick,
+                        username: user.ident,
+                        hostname: user.hostname,
+                    },
+                    modes: user.modes,
+                });
             });
+            state.addMultipleUsersToBuffer(buffer, users);
         }
 
         if (command === 'channel info') {
@@ -488,7 +558,7 @@ function clientMiddleware(state, networkid) {
                         nick: event.nick,
                         username: event.ident,
                         host: event.hostname,
-                        text: `set ${mode.mode} ${mode.param}`,
+                        text: `set ${mode.mode} ${mode.param || ''}`,
                     });
                     state.addMessage(buffer, {
                         time: event.time || Date.now(),
@@ -571,20 +641,28 @@ function clientMiddleware(state, networkid) {
         }
 
         if (command === 'irc error') {
-            let buffer = state.getOrAddBufferByName(network.id, event.channel);
+            let buffer;
+            if (event.channel) {
+                buffer = state.getOrAddBufferByName(network.id, event.channel);
+            }
             if (!buffer) {
                 buffer = network.serverBuffer();
             }
 
-            let messageBody = TextFormatting.formatText('general_error', {
-                text: event.reason || event.error,
-            });
-            state.addMessage(buffer, {
-                time: event.time || Date.now(),
-                nick: '',
-                message: messageBody,
-                type: 'error',
-            });
+            // TODO: Some of these errors contain a .error property whcih we can match against,
+            // ie. password_mismatch.
+
+            if (event.reason) {
+                let messageBody = TextFormatting.formatText('general_error', {
+                    text: event.reason || event.error,
+                });
+                state.addMessage(buffer, {
+                    time: event.time || Date.now(),
+                    nick: '',
+                    message: messageBody,
+                    type: 'error',
+                });
+            }
         }
 
         next();

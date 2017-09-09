@@ -1,25 +1,25 @@
 <template>
     <div class="kiwi-notconnected">
         <div class="kiwi-notconnected-bigicon">
-            <i v-if="!shouldShowLoading" @click="connectNetwork" class="fa fa-plug" aria-hidden="true"></i>
+            <i v-if="!shouldShowLoading" @click="reconnect" class="fa fa-plug" aria-hidden="true"></i>
             <i v-else class="fa fa-refresh fa-spin kiwi-notconnected-bigicon" aria-hidden="true"></i>
         </div>
 
         <div v-if="!shouldShowLoading" class="kiwi-notconnected-caption">
             <template v-if="isChannel()">
-                <span @click="joinChannelAndConnectNetwork">Reconnect to join <i>{{buffer.name}}</i></span>
+                <span @click="reconnect">{{$t('reconnect_channel', {channel: buffer.name})}}</span>
             </template>
             <template v-else-if="isServer()">
-                <span @click="connectNetwork">Reconnect to <i>{{buffer.getNetwork().name}}</i> to start talking</span>
+                <span @click="reconnect">{{$t('reconnect_network', {network: buffer.getNetwork().name})}}</span>
             </template>
             <template v-else-if="isQuery()">
-                <span @click="connectNetwork">Reconnect to continue talking to <i>{{buffer.name}}</i></span>
+                <span @click="reconnect">{{$t('reconnect_query', {user: buffer.name})}}</i></span>
             </template>
 
-            <a @click="showNetworkSettings" class="kiwi-notconnected-networksettings u-link">Connection settings</a>
+            <a @click="showNetworkSettings" class="kiwi-notconnected-networksettings u-link">{{$t('reconnect_settings')}}</a>
         </div>
         <div v-else class="kiwi-notconnected-caption">
-            Connecting..
+            {{$t('connecting')}}
         </div>
     </div>
 </template>
@@ -27,7 +27,6 @@
 <script>
 
 import state from 'src/libs/state';
-import NetworkSettings from './NetworkSettings';
 
 export default {
     data: function data() {
@@ -70,18 +69,15 @@ export default {
         isQuery: function isQuery() {
             return this.buffer.isQuery();
         },
-        joinChannelAndConnectNetwork: function joinChannelAndConnectNetwork() {
-            this.buffer.joined = true;
-            this.connectNetwork();
-        },
-        connectNetwork: function connectNetwork() {
+        reconnect: function reconnect() {
+            if (this.buffer.isChannel()) {
+                this.buffer.enabled = true;
+            }
             this.buffer.getNetwork().ircClient.connect();
         },
         showNetworkSettings: function showNetworkSettings() {
             let network = this.buffer.getNetwork();
-            state.$emit('active.component', NetworkSettings, {
-                network,
-            });
+            state.$emit('network.settings', network);
         },
     },
 };

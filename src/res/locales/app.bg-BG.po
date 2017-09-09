@@ -1,0 +1,487 @@
+#: Close
+msgid "close"
+msgstr "Затвори"
+
+#: Connect
+msgid "connect"
+msgstr "свързване"
+
+#: Connecting...
+msgid "connecting"
+msgstr "свързва се..."
+
+#: Connected
+msgid "connected"
+msgstr "Свързан"
+
+#: Settings
+msgid "settings"
+msgstr "Настройки"
+
+#: Banned
+msgid "banned"
+msgstr "Баннат"
+
+#: Notifications
+msgid "notifications"
+msgstr "Известия"
+
+#: Username
+msgid "username"
+msgstr "Потребителско име"
+
+#: Password
+msgid "password"
+msgstr "Парола"
+
+#: I have a password
+msgid "password_have"
+msgstr "Имам парола"
+
+#: Server
+msgid "server"
+msgstr "Сървър"
+
+#: Nick (Nickname)
+msgid "nick"
+msgstr "Никнейм"
+
+#: Channel
+msgid "channel"
+msgstr "Канал"
+
+#: Network
+msgid "network"
+msgstr "IRC Мрежа"
+
+#: ZNC
+msgid "znc"
+msgstr "ZNC"
+
+#: Logging in...
+msgid "logging_in"
+msgstr "Влизане..."
+
+#: Invalid login
+msgid "invalid_login"
+msgstr "Неправилно вписване"
+
+#: Realname field in a users whois
+msgid "whois_realname"
+msgstr "Поле за истинско име на потребителя при whois"
+
+#: Away status in a users whois
+msgid "whois_status"
+msgstr "Статус"
+
+#: Away status in a users whois
+msgid "whois_status_available"
+msgstr "Статус"
+
+#: Send user a message button
+msgid "send_a_message"
+msgstr "Изпрати съобщение"
+
+#: Show more information
+msgid "more_information"
+msgstr "Повече инфомация"
+
+#: Ignore user toggle box
+msgid "ignore_user"
+msgstr "Добави в игнора"
+
+#: Channel input box
+msgid "connection_channel"
+msgstr "Автоматично влизане в канали."
+
+#: General Title
+msgid "settings_general"
+msgstr "Главни настройки"
+
+#: Theme Title
+msgid "settings_theme"
+msgstr "Настройки на визията"
+
+#: Theme URL
+msgid "settings_themeurl"
+msgstr "Адрес на визията"
+
+#: Use Monospace
+msgid "settings_use_monospace"
+msgstr "Използвайте Monospace"
+
+#: Show autocomplete list
+msgid "settings_show_autocomplete"
+msgstr "Показване на кутийката с подсказките"
+
+#: Messages Title
+msgid "settings_messages_title"
+msgstr "Наименование на съобщението"
+
+#: Show timestamps
+msgid "settings_timestamps"
+msgstr "Време към съобщенията"
+
+#: Use 24-hour timestamps
+msgid "settings_24hour_timestamps"
+msgstr "Показване на 24 часово време"
+
+#: Show emoticons
+msgid "settings_emoticons"
+msgstr "Настройки на емотИкони"
+
+#: Block new Private messages
+msgid "settings_block_private"
+msgstr "Забраняване на лични съобщения"
+
+#: Messages in scrollback
+msgid "settings_scrollback"
+msgstr "съобщения в историята"
+
+#: Extra formatting
+msgid "settings_formatting"
+msgstr "Допълнително форматиране"
+
+#: Include join/part messages as activity
+msgid "settings_show_joinpart"
+msgstr "Известия за влизане/излизане от канал"
+
+#: Mute sound notifications
+msgid "settings_mute_sound"
+msgstr "Заглушаване на звуковите известия"
+
+#: Highlight on words
+msgid "settings_highlight"
+msgstr "Персонализирано осветяване (разделяйте с интервал)"
+
+#: Aliases Title
+msgid "settings_aliases"
+msgstr "Алиасес"
+
+#: Send Message
+msgid "send_message"
+msgstr "Изпрати съобщение"
+
+#: Notify me when
+msgid "settings_notify"
+msgstr "Кога да ме известява"
+
+#: All messages
+msgid "settings_notify_all"
+msgstr "При всяко съобщение"
+
+#: I am mentioned
+msgid "settings_notify_mentioned"
+msgstr "Само когато споменат прякора ми"
+
+#: Never
+msgid "settings_notify_never"
+msgstr "Да не ме известява"
+
+#: Mute sounds
+msgid "settings_notify_mute"
+msgstr "Забрани всички звукови известия"
+
+#: Refresh banlist
+msgid "bans_refresh"
+msgstr "Опресняване на Бан лист-а"
+
+#: Banned user
+msgid "bans_user"
+msgstr "Списък с банове"
+
+#: Banned by
+msgid "bans_by"
+msgstr "Наложен от "
+
+#: Refreshing banlist
+msgid "bans_refreshing"
+msgstr "Опресняване на Бан лист-а"
+
+#: Nobody is banned
+msgid "bans_nobody"
+msgstr "Все още няма баннати потребители"
+
+#: Topic
+msgid "channel_topic"
+msgstr "Темата на деня"
+
+#: Moderated chat
+msgid "channel_moderated"
+msgstr "Заключване на канала за изпращане на съобщения."
+
+#: Invite Only
+msgid "channel_invite"
+msgstr "Само с покана"
+
+#: Moderated topic
+msgid "channel_moderated_topic"
+msgstr "Забрана за смяна на Topic"
+
+#: Block external messages
+msgid "channel_external"
+msgstr "Блокиране на външни съобщения"
+
+#: Welcome to Kiwi IRC!
+msgid "container_welcome"
+msgstr "Добре дошли в Kiwi IRC!"
+
+#: Show statebrowser
+msgid "container_statebrowser"
+msgstr "Покажи statebrowser"
+
+#: Join Channel
+msgid "container_join"
+msgstr "Влез в #канал"
+
+#: Not connected
+msgid "container_notconnected"
+msgstr "Не сте свързан"
+
+#: Private conversation with
+msgid "container_privmsg"
+msgstr "Частен разговор с {{user}}"
+
+#: input wrap placeholder
+msgid "input_placeholder"
+msgstr "Вмъкнете контейнера за.."
+
+#: Loading
+msgid "media_loading"
+msgstr "Зареждане на  {{url}}..."
+
+#: Load previous
+msgid "messages_load"
+msgstr "Зареждане на предишни"
+
+#: NetworkSettings $t('settings_')
+msgid "settings_server_details"
+msgstr "Мрежови настройки"
+
+#: Port
+msgid "settings_port"
+msgstr "Порт"
+
+#: Other networks on this ZNC account
+msgid "settings_znc_other"
+msgstr "Други мрежи за този ZNC акаунт"
+
+#: Your details
+msgid "settings_your_details"
+msgstr "Лична информация"
+
+#: Nickname
+msgid "settings_nickname"
+msgstr "Прякор"
+
+#: Advanced
+msgid "settings_advanced"
+msgstr "Други настройки"
+
+#: Encoding
+msgid "settings_encoding"
+msgstr "Енкодинг"
+
+#: Show Raw
+msgid "settings_show_raw"
+msgstr "Показване на raw "
+
+#: Run commands when connected
+msgid "settings_autorun"
+msgstr "Изпълняване на команда при свързване"
+
+#: Danger zone
+msgid "settings_danger"
+msgstr "Опасна зона"
+
+#: Remove network
+msgid "settings_remove"
+msgstr "Премахни тази мрежа"
+
+#: Person key
+msgid "person"
+msgstr "{{count}} Прякор тук"
+
+#: Person plural key
+msgid "person_plural"
+msgstr "{{count}} Прякор тук"
+
+#: Reconnect Channel
+msgid "reconnect_channel"
+msgstr "Влезте отново за да влезете в {{channel}}"
+
+#: Reconnect to network
+msgid "reconnect_network"
+msgstr "Влезте отново в  {{network}} за да  общувате отново"
+
+#: Reconnect to query
+msgid "reconnect_query"
+msgstr "Влезте отново за продължите разговора си с {{user}}"
+
+#: Connection settings
+msgid "reconnect_settings"
+msgstr "Настройки за свързване"
+
+#: Close options $t('side_')
+msgid "side_close"
+msgstr "Затвори настройките"
+
+#: Channel options
+msgid "side_options"
+msgstr "Опции на #канала"
+
+#: Your settings
+msgid "side_settings"
+msgstr "Твойте настройки"
+
+#: Show when people join
+msgid "side_joins"
+msgstr "Показва кога влизат потребители в канала"
+
+#: Extra message formatting
+msgid "side_formatting"
+msgstr "Допълнтите настройки за съобщения"
+
+#: Nick colours in the list"
+msgid "side_colours"
+msgstr "Цветни  никове в списъка с потребители"
+
+#: No buffer set
+msgid "side_buffer"
+msgstr "Няма зададен буфер"
+
+#: Error starting
+msgid "error_starting"
+msgstr "Грешка при стартирането"
+
+msgid "error_installed"
+msgstr "Този текст няма информация за контекста. Текстът се използва в application.po. Позиция в файл на ред: 87"
+
+#: Leave
+msgid "state_leave"
+msgstr "Премахни {{name}}"
+
+#: Your account
+msgid "state_account"
+msgstr "Твоят Акаунт"
+
+#: Your settings and networks will be remembered on this computer
+msgid "state_remembered"
+msgstr "Вашите настройки и мрежи ще бъдат запомнени на този компютър"
+
+#: Forget me
+msgid "state_forget"
+msgstr "Забрани"
+
+#: No networks here yet.
+msgid "state_network"
+msgstr "Все още няма добавени мрежи тук."
+
+#: Add one?
+msgid "state_add"
+msgstr "Добави"
+
+#: Available networks
+msgid "state_available"
+msgstr "Достъпен"
+
+#: Configure network
+msgid "state_configure"
+msgstr "Настройване на IRC мрежа"
+
+#: Not connected.
+msgid "state_disconnected"
+msgstr "Не сте свързан"
+
+#: Join new #channel
+msgid "state_join"
+msgstr "Влез в нов #канал"
+
+#: Account name
+msgid "user_account"
+msgstr "Потребителско име: {{user}}"
+
+#: Real name
+msgid "user_realname"
+msgstr "Истинско име {{realname}"
+
+#: Is a bot
+msgid "user_bot"
+msgstr "Е бот"
+
+#: Is available for help
+msgid "user_help"
+msgstr "Е на линия за да ви помогне"
+
+#: Is an operator
+msgid "user_op"
+msgstr "Оператор"
+
+#: Connected to
+msgid "user_server"
+msgstr "Свързан към сървър {{server}} {{info}}"
+
+#: Securely connected via SSL/TLS
+msgid "user_secure"
+msgstr "Използва защитена връзка SSL/TLS"
+
+#: Also in channels
+msgid "user_channels"
+msgstr "Канали в които е: {{channels}}"
+
+#: Access level
+msgid "user_access"
+msgstr "Ниво на достъп"
+
+#: Normal
+msgid "user_normal"
+msgstr "Нормален Потребител"
+
+#: Kick from channel
+msgid "user_kick"
+msgstr "Ритни от канала"
+
+#: Ban from the channel
+msgid "user_ban"
+msgstr "Бан от канал"
+
+#: Kick + Ban from the channel
+msgid "user_kickban"
+msgstr "забрани и премахни от канала"
+
+#: Your IRC client
+msgid "personal_client"
+msgstr "Твоят IRC клиент"
+
+#: Add your networks. Join your channels.
+msgid "personal_addjoin"
+msgstr "Добави твоя мрежа.Влез в твой канал."
+
+#: They will be here when you come back.
+msgid "personal_return"
+msgstr "Те ще бъдат тук, когато се върнете."
+
+#: Add a Network
+msgid "personal_add"
+msgstr "Добави IRC мрежа"
+
+#: Saved networks
+msgid "personal_saved"
+msgstr "Запази IRC мрежа"
+
+#: Kiwi IRC (next gen) - Rizon preview
+msgid "rizon_title"
+msgstr "Kiwi IRC (next gen) - Rizon preview"
+
+#: Direct websockets. No Kiwi server or webirc involved.
+msgid "rizon_websockets"
+msgstr "Direct websockets. No Kiwi server or webirc involved."
+
+#: (Thanks to Adam @Rizon for the development websocket server support!)
+msgid "rizon_thanks"
+msgstr " (Благодарности на Adam @Rizon за помощта относно websocket server!)"
+
+#: Give the developer version of Kiwi IRC a try!
+msgid "rizon_dev"
+msgstr "Give the developer version of Kiwi IRC a try!"
+

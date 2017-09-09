@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import AliasRewriter from './AliasRewriter';
+import * as Misc from 'src/helpers/Misc';
 
 // Map of commandName=commandHandlerFn
 const inputCommands = {};
@@ -36,7 +37,12 @@ export default class InputHandler {
         let activeBuffer = this.state.getActiveBuffer();
 
         // If no command specified, server buffers = send raw, channels/queries = send message
-        if (line[0] !== '/') {
+        let escapedCommand = line.substr(0, 2) === '//';
+        if (line[0] !== '/' || escapedCommand) {
+            if (escapedCommand) {
+                line = line.substr(1);
+            }
+
             if (activeBuffer.isServer()) {
                 line = '/quote ' + line;
             } else {
@@ -130,7 +136,7 @@ function handleMessage(type, event, command, line) {
     }
 
     let fnNames = {
-        msg: 'say',
+        privmsg: 'say',
         action: 'action',
         notice: 'notice',
     };
@@ -139,7 +145,7 @@ function handleMessage(type, event, command, line) {
 }
 
 inputCommands.msg = function inputCommandMsg(event, command, line) {
-    handleMessage.call(this, 'msg', event, command, line);
+    handleMessage.call(this, 'privmsg', event, command, line);
 };
 inputCommands.action = function inputCommandMsg(event, command, line) {
     handleMessage.call(this, 'action', event, command, line);
@@ -168,21 +174,22 @@ inputCommands.ctcp = function inputCommandCtcp(event, command, line) {
 inputCommands.join = function inputCommandJoin(event, command, line) {
     event.handled = true;
 
-    let spaceIdx = line.indexOf(' ');
-    if (spaceIdx === -1) spaceIdx = line.length;
-
-    let bufferNames = line.substr(0, spaceIdx).split(',');
-    let keys = line.substr(spaceIdx + 1).split(',');
-
     let network = this.state.getActiveNetwork();
+    let bufferObjs = Misc.extractBuffers(line);
 
     // Only switch to the first channel we join if multiple are being joined
     let hasSwitchedActiveBuffer = false;
-    bufferNames.forEach((bufferName, idx) => {
+    bufferObjs.forEach(bufferObj => {
+        // /join 0 parts all channels and is only ever used to troll IRC newbies.
+        // Just disable it entirely.
+        if (bufferObj.name === '0') {
+            return;
+        }
+
         // Prepend a # channel prefix if not specified already
-        let chanName = network.isChannelName(bufferName) ?
-            bufferName :
-            '#' + bufferName;
+        let chanName = network.isChannelName(bufferObj.name) ?
+            bufferObj.name :
+            '#' + bufferObj.name;
 
         let newBuffer = this.state.addBuffer(network.id, chanName);
 
@@ -191,7 +198,11 @@ inputCommands.join = function inputCommandJoin(event, command, line) {
             hasSwitchedActiveBuffer = true;
         }
 
-        network.ircClient.join(chanName, keys[idx]);
+        if (bufferObj.key) {
+            newBuffer.key = bufferObj.key;
+        }
+
+        network.ircClient.join(chanName, bufferObj.key);
     });
 };
 

@@ -6,6 +6,16 @@ export default class ThemeManager {
     constructor(state) {
         this.state = state;
         this.listenForIrcEvents();
+        this.varsEl = null;
+    }
+
+    themeVar(varName) {
+        if (!this.varsEl) {
+            this.varsEl = document.querySelector('.kiwi-wrap');
+        }
+
+        let styles = window.getComputedStyle(this.varsEl);
+        return styles.getPropertyValue('--kiwi-' + varName).trim();
     }
 
     availableThemes() {
@@ -15,32 +25,40 @@ export default class ThemeManager {
     currentTheme() {
         let state = this.state;
         let currentThemeName = state.setting('theme');
-
-        // If no theme was set, use the first one in our theme list
-        if (!currentThemeName) {
-            currentThemeName = state.settings.themes[0].name;
-        }
-
         currentThemeName = currentThemeName.toLowerCase();
 
-        return _.find(state.settings.themes, t => {
+        let theme = _.find(state.settings.themes, t => {
             let isMatch = t.name.toLowerCase() === currentThemeName;
             return isMatch;
         });
-    }
 
-    setTheme(themeName) {
-        // Make sure this theme exists
-        let themeExists = !!_.find(this.state.settings.themes, t => {
-            let isMatch = t.name.toLowerCase() === themeName.toLowerCase();
-            return isMatch;
-        });
-
-        if (!themeExists) {
-            return;
+        // If no theme was set, use the first one in our theme list
+        if (!theme) {
+            theme = state.settings.themes[0];
         }
 
-        this.state.user_settings.theme = themeName;
+        return theme;
+    }
+
+    setTheme(theme) {
+        let theTheme = null;
+
+        if (typeof theme === 'string') {
+            // Make sure this theme exists
+            theTheme = _.find(this.availableThemes(), t => {
+                let isMatch = t.name.toLowerCase() === theme.toLowerCase();
+                return isMatch;
+            });
+
+            if (!theTheme) {
+                return;
+            }
+        } else {
+            theTheme = theme;
+        }
+
+        this.state.setting('theme', theTheme.name);
+        this.state.$emit('theme.change');
     }
 
     reload() {
@@ -59,6 +77,32 @@ export default class ThemeManager {
         }
 
         theme.url = url;
+        this.state.$emit('theme.change');
+    }
+
+    themeUrl(theme) {
+        let parts = theme.url.split('?');
+        let url = parts[0];
+        let qs = parts[1] || '';
+
+        if (url[url.length - 1] !== '/') {
+            url += '/';
+        }
+        return url + 'theme.css' + (qs ? '?' + qs : '');
+    }
+
+    setCustomThemeUrl(url) {
+        let theme = _.find(ThemeManager.instance().availableThemes(), {
+            name: 'custom',
+        });
+
+        if (theme) {
+            theme.url = url;
+        }
+
+        if (theme.name === 'custom') {
+            this.state.$emit('theme.change');
+        }
     }
 
     // When we get a CTCP 'kiwi theme reload' then reload our theme. Handy for theme devs

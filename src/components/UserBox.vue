@@ -7,15 +7,15 @@
         </div>
 
         <p class="kiwi-userbox-basicinfo">
-            <b>Real name:</b> {{user.realname}} <br />
-            <b>Status:</b> {{user.away ? 'Status: ' + user.away : 'Is available'}} <br />
+            <b>{{$t('whois_realname')}}:</b> {{user.realname}} <br />
+            <b>{{$t('whois_status')}}:</b> {{user.away ? user.away : $t('whois_status_available')}} <br />
         </p>
 
         <p class="kiwi-userbox-actions">
-            <a @click="openQuery" class="u-link">Send a message</a>
-            <a v-if="!whoisRequested" class="u-link" @click="updateWhoisData">More information</a> <br />
+            <a @click="openQuery" class="u-link">{{$t('send_a_message')}}</a>
+            <a v-if="!whoisRequested" class="u-link" @click="updateWhoisData">{{$t('more_information')}}</a> <br />
             <label>
-                <input type="checkbox" v-model="user.ignore" /> Ignore user
+                <input type="checkbox" v-model="user.ignore" /> {{$t('ignore_user')}}
             </label>
         </p>
 
@@ -28,38 +28,39 @@
                 <i class="fa fa-spinner" aria-hidden="true"></i>
             </template>
             <template v-else>
-                <span class="kiwi-userbox-whois-line">{{user.away ? 'Status: ' + user.away : 'Is available'}}</span>
-                <span class="kiwi-userbox-whois-line" v-if="user.account">Account name: {{user.account}}</span>
-                <span class="kiwi-userbox-whois-line">Real name: {{user.realname}}</span>
-                <span class="kiwi-userbox-whois-line" v-if="user.bot">Is a bot</span>
-                <span class="kiwi-userbox-whois-line" v-if="user.helpop">Is available for help</span>
-                <span class="kiwi-userbox-whois-line" v-if="user.operator">Is an operator</span>
-                <span class="kiwi-userbox-whois-line" v-if="user.server">Connected to {{user.server}} {{user.server_info ? `(${user.server_info})` : ''}}</span>
-                <span class="kiwi-userbox-whois-line" v-if="user.secure">Securely connected via SSL/TLS</span>
-                <span class="kiwi-userbox-whois-line" v-if="user.channels">Also in channels {{user.channels}}</span>
+                <span class="kiwi-userbox-whois-line">{{user.away ? $t('whois_status') + ': ' + user.away : $t('whois_status_available')}}</span>
+                <span class="kiwi-userbox-whois-line" v-if="user.account">{{$t('user_account', {user: user.account})}}</span>
+                <span class="kiwi-userbox-whois-line">{{$t('user_realname', {realname: user.realname})}}</span>
+                <span class="kiwi-userbox-whois-line" v-if="user.bot">{{$t('user_bot')}}</span>
+                <span class="kiwi-userbox-whois-line" v-if="user.helpop">{{$t('user_help')}}</span>
+                <span class="kiwi-userbox-whois-line" v-if="user.operator">{{$t('user_op')}}</span>
+                <span class="kiwi-userbox-whois-line" v-if="user.server">{{$t('user_server', { server: user.server, info: (user.server_info ? `(${user.server_info})` : '')})}}</span>
+                <span class="kiwi-userbox-whois-line" v-if="user.secure">{{$t('user_secure')}}</span>
+                <span class="kiwi-userbox-whois-line" v-if="user.channels">{{$t('user_channels', {channels: user.channels})}}</span>
             </template>
         </div>
 
-        <div v-if="buffer.isChannel() && areWeAnOp" class="kiwi-userbox-actions-op">
+        <div v-if="isUserOnBuffer && buffer.isChannel() && areWeAnOp" class="kiwi-userbox-actions-op">
             <form class="u-form" @submit.prevent="">
                 <label>
-                    Access level <select v-model="userMode">
+                    {{$t('user_access')}} <select v-model="userMode">
                         <option v-for="mode in availableChannelModes" v-bind:value="mode.mode">
                             {{mode.description}}
                         </option>
-                        <option value="">Normal</option>
+                        <option value="">{{$t('user_normal')}}</option>
                     </select>
                 </label>
                 <label>
-                    <button @click="kickUser" class="u-button u-button-secondary">Kick from the channel</button>
+                    <button @click="kickUser" class="u-button u-button-secondary">{{$t('user_kick')}}</button>
                 </label>
                 <label>
-                    <button @click="banUser" class="u-button u-button-secondary">Ban from the channel</button>
+                    <button @click="banUser" class="u-button u-button-secondary">{{$t('user_ban')}}</button>
+                </label>
+                <label>
+                    <button @click="kickbanUser" class="u-button u-button-secondary">{{$t('user_kickban')}}</button>
                 </label>
             </form>
         </div>
-
-        <a @click="closeBox" class="u-button u-button-primary">Close</a>
     </div>
 </template>
 
@@ -107,6 +108,18 @@ export default {
 
             return this.buffer.isUserAnOp(this.buffer.getNetwork().nick);
         },
+        isUserOnBuffer: function isUserOnBuffer() {
+            if (!this.buffer) {
+                return false;
+            }
+
+            if (!this.user.buffers[this.buffer.id]) {
+                // Probably switched buffer while the userbox was open
+                return false;
+            }
+
+            return true;
+        },
         userMode: {
             get: function getUserMode() {
                 if (!this.buffer) {
@@ -114,6 +127,11 @@ export default {
                 }
 
                 let userBufferInfo = this.user.buffers[this.buffer.id];
+                if (!userBufferInfo) {
+                    // Probably switched buffer while the userbox was open
+                    return '';
+                }
+
                 let modes = userBufferInfo.modes;
                 return modes.length > 0 ?
                     modes[0] :
@@ -153,13 +171,9 @@ export default {
                 modes[0] :
                 '';
         },
-        closeBox: function closeViewer() {
-            state.$emit('userbox.hide');
-        },
         openQuery: function openQuery() {
             let buffer = state.addBuffer(this.network.id, this.user.nick);
             state.setActiveBuffer(this.network.id, buffer.name);
-            this.closeBox();
         },
         updateWhoisData: function updateWhoisData() {
             this.whoisRequested = true;
@@ -178,8 +192,17 @@ export default {
             }
 
             let banMask = `*!${this.user.username}@${this.user.host}`;
+            this.network.ircClient.raw('MODE', this.buffer.name, '+b', banMask);
+        },
+        kickbanUser: function kickbanuser() {
+            if (!this.user.username || !this.user.host) {
+                return;
+            }
+
+            let banMask = `*!${this.user.username}@${this.user.host}`;
             let reason = 'Your behavior is not conducive to the desired environment.';
-            this.network.ircClient.raw('MODE', this.buffer.name, '+b', banMask, reason);
+            this.network.ircClient.raw('MODE', this.buffer.name, '+b', banMask);
+            this.network.ircClient.raw('KICK', this.buffer.name, this.user.nick, reason);
         },
         maybeRepositionTop: function maybeRepositionTop() {
             let rect = this.$el.getBoundingClientRect();

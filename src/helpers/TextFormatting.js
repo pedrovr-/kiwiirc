@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import * as Colours from './Colours';
 import { md5 } from './Md5';
+import ThemeManager from 'src/libs/ThemeManager';
 
 /**
  *   Formats a message. Adds bold, underline and colouring
@@ -8,14 +9,14 @@ import { md5 } from './Md5';
  *   @returns    {String}        The HTML formatted message
  */
 const colourMatchRegexp = /^\x03(([0-9][0-9]?)(,([0-9][0-9]?))?)/;
-export function ircCodesToHtml(input) {
+export function ircCodesToHtml(input, enableExtras) {
     function spanFromOpen() {
         let style = '';
         let colours;
         let classes = [];
         let result = '';
 
-        if (openTags.bold || openTags.italic || openTags.underline || openTags.colour) {
+        if (isTagOpen()) {
             style += (openTags.bold) ? 'font-weight: bold; ' : '';
             style += (openTags.italic) ? 'font-style: italic; ' : '';
             style += (openTags.underline) ? 'text-decoration: underline; ' : '';
@@ -72,6 +73,33 @@ export function ircCodesToHtml(input) {
             return null;
         }
     }
+    function isTagOpen() {
+        return (openTags.bold || openTags.italic || openTags.underline || openTags.colour);
+    }
+    function openTag() {
+        currentTag = spanFromOpen();
+    }
+    function closeTag() {
+        if (isTagOpen()) {
+            out += currentTag + '</span>';
+        }
+    }
+    function addContent(content) {
+        if (isTagOpen()) {
+            currentTag += content;
+        } else {
+            out += content;
+        }
+    }
+    // Invisible characters are still selectable. Ie. when copying text
+    function addInvisibleContent(content) {
+        let tag = `<span class="kiwi-formatting-extras-invisible">${content}</span>`;
+        if (isTagOpen()) {
+            currentTag += tag;
+        } else {
+            out += tag;
+        }
+    }
 
     let msg = input || '';
     let out = '';
@@ -87,32 +115,86 @@ export function ircCodesToHtml(input) {
     let match = null;
 
     for (i = 0; i < msg.length; i++) {
-        switch (msg[i]) {
-        case '\x02':
-            if ((openTags.bold || openTags.italic || openTags.underline || openTags.colour)) {
-                out += currentTag + '</span>';
+        let char = msg[i];
+
+        if (enableExtras) {
+            if (char === '&' && i === 0 && msg.indexOf('&gt; ') === 0) {
+                // Starting with '> '
+                out += '<span class="kiwi-formatting-extras-block">' + msg.substr(5);
+                i = msg.length;
+                break;
+            } else if (char === '`') {
+                let nextQuotePos = msg.indexOf('`', i + 1);
+                // Only quote if there is a closing quote later in the string
+                if (nextQuotePos > -1) {
+                    closeTag();
+
+                    out += '<span class="kiwi-formatting-extras-quote">';
+                    addInvisibleContent('`');
+                    out += msg.substring(i + 1, nextQuotePos);
+                    addInvisibleContent('`');
+                    out += '</span>';
+                    i = nextQuotePos;
+                    continue;
+                }
+            } else if (char === '*') {
+                let isBold = msg.substr(i, 2) === '**';
+                let moreBoldExists = isBold && msg.indexOf('**', i + 2) > -1;
+                let isItalic = !isBold;
+                let moreItalicExists = isItalic && msg.indexOf('*', i + 1) > -1;
+
+                if (isBold && moreBoldExists && !openTags.bold) {
+                    closeTag();
+                    openTags.bold = true;
+                    openTag();
+                    addInvisibleContent('**');
+                    // Skip the next *
+                    i++;
+                    continue;
+                } else if (isBold && openTags.bold) {
+                    addInvisibleContent('**');
+                    closeTag();
+                    openTags.bold = false;
+                    openTag();
+                    // Skip the next *
+                    i++;
+                    continue;
+                } else if (isItalic && moreItalicExists && !openTags.italic) {
+                    closeTag();
+                    openTags.italic = true;
+                    openTag();
+                    addInvisibleContent('*');
+                    continue;
+                } else if (isItalic && openTags.italic) {
+                    addInvisibleContent('*');
+                    closeTag();
+                    openTags.italic = false;
+                    openTag();
+                    continue;
+                }
+            } else if (char === '\n') {
+                addContent('<br>');
+                continue;
             }
+        }
+
+        if (char === '\x02') {
+            closeTag();
             openTags.bold = !openTags.bold;
-            currentTag = spanFromOpen();
-            break;
-        case '\x1D':
-            if ((openTags.bold || openTags.italic || openTags.underline || openTags.colour)) {
-                out += currentTag + '</span>';
-            }
+            openTag();
+            continue;
+        } else if (char === '\x1D') {
+            closeTag();
             openTags.italic = !openTags.italic;
-            currentTag = spanFromOpen();
-            break;
-        case '\x1F':
-            if ((openTags.bold || openTags.italic || openTags.underline || openTags.colour)) {
-                out += currentTag + '</span>';
-            }
+            openTag();
+            continue;
+        } else if (char === '\x1F') {
+            closeTag();
             openTags.underline = !openTags.underline;
-            currentTag = spanFromOpen();
-            break;
-        case '\x03':
-            if ((openTags.bold || openTags.italic || openTags.underline || openTags.colour)) {
-                out += currentTag + '</span>';
-            }
+            openTag();
+            continue;
+        } else if (char === '\x03') {
+            closeTag();
             match = colourMatch(msg.substr(i, 6));
             if (match) {
                 i += match[1].length;
@@ -125,27 +207,18 @@ export function ircCodesToHtml(input) {
             } else {
                 openTags.colour = false;
             }
-            currentTag = spanFromOpen();
-            break;
-        case '\x0F':
-            if ((openTags.bold || openTags.italic || openTags.underline || openTags.colour)) {
-                out += currentTag + '</span>';
-            }
+            openTag();
+            continue;
+        } else if (char === '\x0F') {
+            closeTag();
             openTags.bold = openTags.italic = openTags.underline = openTags.colour = false;
-            break;
-        default:
-            if ((openTags.bold || openTags.italic || openTags.underline || openTags.colour)) {
-                currentTag += msg[i];
-            } else {
-                out += msg[i];
-            }
-            break;
+            continue;
         }
+
+        addContent(msg[i]);
     }
 
-    if ((openTags.bold || openTags.italic || openTags.underline || openTags.colour)) {
-        out += currentTag + '</span>';
-    }
+    closeTag();
 
     return out;
 }
@@ -168,6 +241,7 @@ const urlRegex = new RegExp('' +
 
 export function linkifyUrls(input, _opts) {
     let opts = _opts || {};
+    let foundUrls = [];
     let result = input.replace(urlRegex, _url => {
         let url = _url;
         let nice = url;
@@ -196,10 +270,14 @@ export function linkifyUrls(input, _opts) {
             out += `<a data-url="${url}" class="${cssClass}">${content}</a>`;
         }
 
+        foundUrls.push(url);
         return out;
     });
 
-    return result;
+    return {
+        urls: foundUrls,
+        html: result,
+    };
 }
 
 export function linkifyChannels(word) {
@@ -214,16 +292,25 @@ export function linkifyChannels(word) {
 export function linkifyUsers(word, userlist) {
     let ret = '';
     let nick = '';
+    let prepend = '';
     let append = '';
-    let nickChars = '_-\\[]{}^`|';
-    let validLastChar = nickChars.indexOf(word[word.length - 1]) > -1;
+    let punc = ',.!:;-+)]?¿\\/<>@';
+    let validLastChar = punc.indexOf(word[word.length - 1]) > -1;
+    let normWord = word.toLowerCase();
+    let hasProp = Object.prototype.hasOwnProperty;
 
-    if (userlist[word]) {
+      // Checking for a nick in order of processing cost
+    if (hasProp.call(userlist, normWord)) {
         nick = word;
-    } else if (userlist[word.substr(0, word.length - 1)] && !validLastChar) {
+    } else if (hasProp.call(userlist, normWord.substr(0, normWord.length - 1)) && validLastChar) {
         // The last character is usually punctuation of some kind
         nick = word.substr(0, word.length - 1);
         append = word[word.length - 1];
+    } else if (hasProp.call(userlist, _.trim(normWord, punc))) {
+        nick = _.trim(word, punc);
+        let nickIdx = word.indexOf(nick);
+        append = word.substr(nickIdx + nick.length);
+        prepend = word.substr(0, nickIdx);
     } else {
         return word;
     }
@@ -232,6 +319,9 @@ export function linkifyUsers(word, userlist) {
     let colour = createNickColour(nick);
     ret = `<a class="kiwi-nick" data-nick="${escaped}" style="color:${colour}">${escaped}</a>`;
 
+    if (prepend) {
+        ret = _.escape(prepend) + ret;
+    }
     if (append) {
         ret += _.escape(append);
     }
@@ -244,14 +334,16 @@ export function linkifyUsers(word, userlist) {
  */
 let nickColourCache = Object.create(null);
 export function createNickColour(nick) {
-    if (nickColourCache[nick]) {
-        return nickColourCache[nick];
+    let nickLower = nick.toLowerCase();
+
+    if (nickColourCache[nickLower]) {
+        return nickColourCache[nickLower];
     }
 
     // The HSL properties are based on this specific colour
     let startingColour = '#36809B'; // '#449fc1';
 
-    let hash = md5(nick);
+    let hash = md5(nickLower);
     let hueOffset = mapRange(hexVal(hash, 14, 3), 0, 4095, 0, 359);
     let satOffset = hexVal(hash, 17);
     let baseColour = Colours.rgb2hsl(Colours.hex2rgb(startingColour));
@@ -263,10 +355,16 @@ export function createNickColour(nick) {
         baseColour.s = Math.max(0, ((baseColour.s * 100) - satOffset) / 100);
     }
 
+    let themeMngr = ThemeManager.instance();
+    let brightness = themeMngr.themeVar('nick-brightness');
+    if (brightness) {
+        baseColour.l = parseInt(brightness, 10) / 100;
+    }
+
     let rgb = Colours.hsl2rgb(baseColour);
     let nickColour = Colours.rgb2hex(rgb);
 
-    nickColourCache[nick] = nickColour;
+    nickColourCache[nickLower] = nickColour;
 
     return nickColour;
 }

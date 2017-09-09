@@ -11,27 +11,42 @@
                     :items="autocomplete_items"
                     :filter="autocomplete_filter"
                     :buffer="buffer"
+                    @temp="onAutocompleteTemp"
                     @selected="onAutocompleteSelected"
                     @cancel="onAutocompleteCancel"
                 ></auto-complete>
                 <div class="kiwi-controlinput-input-wrap">
-                    <textarea
+                    <irc-input
+                        ref="input"
                         @keydown="inputKeyDown($event)"
                         @keyup="inputKeyUp($event)"
-                        v-model="currentInputValue"
+                        @click="closeInputTool"
                         class="kiwi-controlinput-input"
                         wrap="off"
-                        placeholder="Send a message..."></textarea>
+                        :placeholder="$t('input_placeholder')"></irc-input>
                 </div>
                 <!--<button type="submit">Send</button>-->
             </form>
+            <div class="kiwi-controlinput-tools" ref="plugins">
+                <a @click.prevent="onToolClickTextStyle">
+                    <i class="fa fa-adjust" aria-hidden="true"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="kiwi-controlinput-tool">
+            <component v-bind:is="active_tool" v-bind="active_tool_props"></component>
         </div>
     </div>
 </template>
 
 <script>
+
+import _ from 'lodash';
+import autocompleteCommands from 'src/res/autocompleteCommands';
 import state from 'src/libs/state';
 import AutoComplete from './AutoComplete';
+import ToolTextStyle from './inputtools/TextStyle';
 
 export default {
     components: {
@@ -45,6 +60,15 @@ export default {
             autocomplete_open: false,
             autocomplete_items: [],
             autocomplete_filter: '',
+            // Not filtering through the autocomplete list means that the entire word is put
+            // in place when cycling through items. Just as with traditional IRC clients when
+            // tabbing through nicks.
+            // When filtering through the list, we keep typing more of the word we want as the
+            // autocomplete list filters its results to show us the relevant items, not replacing
+            // the current word until we select an item.
+            autocomplete_filtering: true,
+            active_tool: null,
+            active_tool_props: {},
         };
     },
     props: ['container', 'buffer'],
@@ -55,58 +79,45 @@ export default {
                 activeNetwork.nick :
                 '';
         },
-        currentInputValue: {
-            get: function getCurrentInputValue() {
-                return this.history[this.history_pos] || this.value;
-            },
-            set: function getCurrentInputValue(newValue) {
-                this.value = newValue;
-                // Set history position to 1 index over the current size so that
-                // it's not pointing at an existing item
-                this.history_pos = this.history.length;
-            },
+    },
+    watch: {
+        history_pos: function watchhistoryPos(newVal) {
+            let val = this.history[this.history_pos];
+            this.$refs.input.setValue(val || '');
         },
     },
     methods: {
+        addPlugin: function addPlugin(domEl) {
+            this.$refs.plugins.appendChild(domEl);
+        },
+        onToolClickTextStyle: function onToolClickTextStyle() {
+            this.toggleInputTool(ToolTextStyle);
+        },
+        closeInputTool: function closeInputTool() {
+            this.active_tool = null;
+        },
+        toggleInputTool: function toggleInputTool(tool) {
+            if (!tool || this.active_tool === tool) {
+                this.active_tool = null;
+            } else {
+                this.active_tool_props = {
+                    buffer: this.buffer,
+                    ircinput: this.$refs.input,
+                };
+                this.active_tool = tool;
+            }
+        },
         onAutocompleteCancel: function onAutocompleteCancel() {
             this.autocomplete_open = false;
         },
-        onAutocompleteSelected: function onAutocompleteSelected(selectedValue) {
-            let insert = selectedValue;
-            let input = this.$el.querySelector('textarea');
-            let inputVal = input.value;
-            let beginningVal = inputVal.substr(0, input.selectionStart);
-            let endingVal = inputVal.substr(input.selectionStart);
-
-            let idx = 0;
-
-            idx = beginningVal.lastIndexOf(' ');
-            if (idx === -1) {
-                beginningVal = '';
-            } else {
-                beginningVal = beginningVal.substr(0, idx + 1);
+        onAutocompleteTemp: function onAutocompleteTemp(selectedValue, selectedItem) {
+            if (!this.autocomplete_filtering) {
+                this.$refs.input.setCurrentWord(selectedValue);
             }
-            idx = endingVal.indexOf(' ');
-            if (idx === -1) {
-                endingVal = '';
-            } else {
-                endingVal = endingVal.substr(idx);
-            }
-
-            // If no beginningVal because we're at the start of the input, auto insert punctuation
-            if (!beginningVal) {
-                insert += ', ';
-            } else {
-                insert += ' ';
-            }
-
-            this.value = `${beginningVal}${insert}${endingVal}`;
-
-            this.$nextTick(() => {
-                let pos = `${beginningVal}${insert}`.length;
-                input.setSelectionRange(pos, pos);
-            });
-
+        },
+        onAutocompleteSelected: function onAutocompleteSelected(selectedValue, selectedItem) {
+            let word = selectedValue;
+            this.$refs.input.setCurrentWord(word);
             this.autocomplete_open = false;
         },
         inputKeyDown: function inputKeyDown(event) {
@@ -123,15 +134,29 @@ export default {
                 return;
             }
 
+            // When not filtering, select the current autocomplete item so that we can type any
+            // character directly after a nick
+            if (this.autocomplete_open && !this.autocomplete_filtering) {
+                this.$refs.autocomplete.selectCurrentItem();
+            }
+
             if (event.keyCode === 13) {
                 event.preventDefault();
                 this.submitForm();
             } else if (event.keyCode === 38) {
                 // Up
+                event.preventDefault();
                 this.historyBack();
+                this.$nextTick(() => {
+                    this.$refs.input.selectionToEnd();
+                });
             } else if (event.keyCode === 40) {
                 // Down
+                event.preventDefault();
                 this.historyForward();
+                this.$nextTick(() => {
+                    this.$refs.input.selectionToEnd();
+                });
             } else if (
                 event.keyCode === 9
                 && !event.shiftKey
@@ -147,15 +172,20 @@ export default {
             } else if (meta && event.keyCode === 219) {
                 // meta + [
                 // TODO: Switch to the previous buffer
+            } else if (meta && event.keyCode === 75) {
+                // meta + k
+                this.toggleInputTool(ToolTextStyle);
+                event.preventDefault();
             }
         },
         inputKeyUp: function inputKeyUp(event) {
-            let input = event.currentTarget;
-            let inputVal = input.value;
-            let tokens = inputVal.substring(0, input.selectionStart).split(' ');
-            let currentToken = tokens[tokens.length - 1];
+            let inputVal = this.$refs.input.getRawText();
+            let currentWord = this.$refs.input.getCurrentWord();
+            let currentToken = currentWord.word.substr(0, currentWord.position);
 
-            if (currentToken === '') {
+            if (event.keyCode === 27 && this.autocomplete_open) {
+                this.autocomplete_open = false;
+            } else if (this.autocomplete_open && currentToken === '') {
                 this.autocomplete_open = false;
             } else if (this.autocomplete_open) {
                 // @ is a shortcut to open the nicklist autocomplete. It's not part
@@ -166,41 +196,43 @@ export default {
                 }
             } else if (currentToken === '@') {
                 // Just typed @ so start the nick auto completion
-                this.autocomplete_items = this.buildAutoCompleteItems({ users: true });
-                this.autocomplete_open = true;
+                this.openAutoComplete(this.buildAutoCompleteItems({ users: true }));
+                this.autocomplete_filtering = true;
             } else if (inputVal === '/') {
                 // Just typed / so start the command auto completion
-                // TODO: Get the commands typed up so this can be enabled
-                // this.autocomplete_items = this.buildAutoCompleteItems({ commands: true });
-                // this.autocomplete_open = true;
+                this.openAutoComplete(this.buildAutoCompleteItems({ commands: true }));
+                this.autocomplete_filtering = true;
             } else if (currentToken === '#') {
                 // Just typed # so start the command auto completion
-                this.autocomplete_items = this.buildAutoCompleteItems({ buffers: true });
-                this.autocomplete_open = true;
+                this.openAutoComplete(this.buildAutoCompleteItems({ buffers: true }));
+                this.autocomplete_filtering = true;
             } else if (event.keyCode === 9) {
                 // Tab key was just pressed, start general auto completion
-                this.autocomplete_items = this.buildAutoCompleteItems({
+                let items = this.buildAutoCompleteItems({
                     users: true,
-                    commands: true,
                     buffers: true,
                 });
-                this.autocomplete_open = true;
+                this.openAutoComplete(items);
+                this.autocomplete_filter = currentToken;
+
+                // Disable filtering so that tabbing cycles through words more like
+                // traditional IRC clients.
+                this.autocomplete_filtering = false;
                 event.preventDefault();
             }
 
-            if (this.autocomplete_open) {
+            if (this.autocomplete_open && this.autocomplete_filtering) {
                 this.autocomplete_filter = currentToken;
             }
         },
         submitForm: function submitForm() {
-            // Editing a history entry sets .value to the new input value, so check
-            // for that before the history value.
-            let rawInput = this.value || this.currentInputValue;
+            let rawInput = this.$refs.input.getValue();
             if (!rawInput) {
                 return;
             }
 
-            state.$emit('input.raw', rawInput);
+            let ircText = this.$refs.input.buildIrcText();
+            state.$emit('input.raw', ircText);
 
             // Add to history, keeping the history trimmed to the last 50 entries
             this.history.push(rawInput);
@@ -208,6 +240,7 @@ export default {
             this.history_pos = this.history.length;
 
             this.value = '';
+            this.$refs.input.reset();
         },
         historyBack: function historyBack() {
             if (this.history_pos > 0) {
@@ -221,12 +254,18 @@ export default {
                 this.history_pos++;
             }
         },
+        openAutoComplete: function openAutoComplete(items) {
+            if (state.setting('showAutocomplete')) {
+                this.autocomplete_items = items;
+                this.autocomplete_open = true;
+            }
+        },
         buildAutoCompleteItems: function buildAutoCompleteItems(_opts) {
             let opts = _opts || {};
             let list = [];
 
             if (opts.users) {
-                let userList = this.buffer.users.map(user => {
+                let userList = _.values(this.buffer.users).map(user => {
                     let item = {
                         text: user.nick,
                         type: 'user',
@@ -251,11 +290,29 @@ export default {
                 list = list.concat(bufferList);
             }
 
+            if (opts.commands) {
+                let commandList = [];
+                autocompleteCommands.forEach(command => {
+                    commandList.push({
+                        text: '/' + command.command,
+                        description: command.description,
+                        type: 'command',
+                    });
+                });
+
+                list = list.concat(commandList);
+            }
+
             return list;
         },
     },
     created: function created() {
-        state.$on('document.keydown', (ev) => {
+        this.listen(state, 'document.keydown', (ev) => {
+            // No input box currently? Nothing to shift focus to
+            if (!this.$refs.input) {
+                return;
+            }
+
             // If we're copying text, don't shift focus
             if (ev.ctrlKey || ev.altKey || ev.metaKey) {
                 return;
@@ -271,8 +328,11 @@ export default {
                 return;
             }
 
-            this.$el.querySelector('.kiwi-controlinput-input').focus();
+            this.$refs.input.focus();
         });
+    },
+    mounted: function mounted() {
+        state.$emit('controlinput:show', { controlinput: this });
     },
 };
 </script>
@@ -283,32 +343,42 @@ export default {
     box-sizing: border-box;
 }
 .kiwi-controlinput-inner {
-    align-items: stretch;
     display: flex;
     position: relative;
     height: 100%;
     box-sizing: border-box;
 }
 .kiwi-controlinput-user {
-    flex: 1 80px;
-    display: inline-block;
     height: 100%;
 }
 .kiwi-controlinput-form {
-    flex: 1 100%;
+    flex: 1;
+    overflow: hidden;
 }
+
 .kiwi-controlinput-input-wrap {
     width: 100%;
     height: 100%;
     box-sizing: border-box;
+    overflow: visible;
 }
 .kiwi-controlinput-input {
     height: 100%;
-    width: 100%;
-    box-sizing: border-box;
-    resize: none;
-    white-space: nowrap;
-    overflow-x: hidden;
+    outline: none;
+}
+
+.kiwi-controlinput-tools > a {
+    display: inline-block;
+    padding: 0 1em;
+    cursor: pointer;
+}
+.kiwi-controlinput-tool {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    z-index: 1;
+    background: #f6f6f6;
+    border: 1px solid #dddddd;
 }
 
 </style>

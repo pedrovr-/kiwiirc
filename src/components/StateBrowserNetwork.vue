@@ -1,71 +1,85 @@
 <template>
-    <div class="kiwi-statebrowser-network" :class="[isActiveNetwork ? 'kiwi-statebrowser-network--active' : '']">
-        <a class="kiwi-statebrowser-network-name u-link" @click="setActiveBuffer(network.serverBuffer())">{{network.name}}</a>
+    <div class="kiwi-statebrowser-network" :class="[
+        isActiveNetwork ? 'kiwi-statebrowser-network--active' : '',
+    ]">
+        <div class="kiwi-statebrowser-network-header">
+            <a class="kiwi-statebrowser-network-name u-link" @click="setActiveBuffer(network.serverBuffer())">{{network.name}}</a>
+            <a v-if="network.buffers.length > 1" class="kiwi-statebrowser-network-toggle" @click="collapsed=!collapsed">
+                <i class="fa" :class="[collapsed?'fa-plus-square-o':'fa-minus-square-o']" aria-hidden="true"></i>
+            </a>
+        </div>
 
+        <div class="kiwi-statebrowser-network-toggable-area" :class="[
+            collapsed ? 'kiwi-statebrowser-network-toggable-area--collapsed' : '',
+        ]">
             <transition name="kiwi-statebrowser-network-status-transition">
             <div v-if="network.state !== 'connected'" class="kiwi-statebrowser-network-status">
-                <template v-if="!network.connection.server">
-                    <a @click="showNetworkSettings(network)" class="u-link">Configure network</a>
+                <template v-if="network.state_error">
+                    <i class="fa fa-exclamation-triangle" aria-hidden="true"></i> <a @click="showNetworkSettings(network)" class="u-link">{{$t('state_configure')}}</a>
+                </template>
+                <template v-else-if="!network.connection.server">
+                    <a @click="showNetworkSettings(network)" class="u-link">{{$t('state_configure')}}</a>
                 </template>
                 <template v-else-if="network.state === 'disconnected'">
-                    Not connected.
-                    <a @click="network.ircClient.connect()" class="u-link">Connect</a>
+                    {{$t('state_disconnected')}}
+                    <a @click="network.ircClient.connect()" class="u-link">{{$t('connect')}}</a>
                 </template>
                 <template v-else-if="network.state === 'connecting'">
-                    Connecting...
+                    {{$t('connecting')}}
                 </template>
             </div>
             </transition>
 
-        <div class="kiwi-statebrowser-channels">
-            <div
-                v-for="buffer in orderedBuffers(network.buffers)"
-                class="kiwi-statebrowser-channel"
-                v-bind:class="{
-                    'kiwi-statebrowser-channel-active': isActiveBuffer(buffer),
-                    'kiwi-statebrowser-channel-notjoined': buffer.isChannel() && !buffer.joined
-                }"
-            >
-                <div class="kiwi-statebrowser-channel-name u-link" @click="setActiveBuffer(buffer)">{{buffer.name}}</div>
-                <div class="kiwi-statebrowser-channel-labels">
-                    <transition name="kiwi-statebrowser-channel-label-transition">
-                    <div v-if="buffer.flags.unread" class="kiwi-statebrowser-channel-label">
-                        {{buffer.flags.unread}}
-                    </div>
-                    </transition>
-                </div>
-
+            <div class="kiwi-statebrowser-channels">
                 <div
-                    class="kiwi-statebrowser-channel-settings"
-                    @click.stop="$emit('showBufferSettings', buffer, $event.clientY)"
+                    v-for="buffer in orderedBuffers(network.buffers)"
+                    class="kiwi-statebrowser-channel"
+                    v-bind:class="{
+                        'kiwi-statebrowser-channel-active': isActiveBuffer(buffer),
+                        'kiwi-statebrowser-channel-notjoined': buffer.isChannel() && !buffer.joined
+                    }"
                 >
-                    <i class="fa fa-cog" aria-hidden="true"></i>
+                    <div class="kiwi-statebrowser-channel-name" @click="setActiveBuffer(buffer)">{{buffer.name}}</div>
+                    <div class="kiwi-statebrowser-channel-labels">
+                        <transition name="kiwi-statebrowser-channel-label-transition">
+                        <div v-if="buffer.flags.unread" class="kiwi-statebrowser-channel-label" :class="{'kiwi-statebrowser-channel-label--highlight': buffer.flags.highlight}">
+                            {{buffer.flags.unread}}
+                        </div>
+                        </transition>
+                    </div>
+
+                    <div
+                        class="kiwi-statebrowser-channel-settings"
+                        @click.stop="$emit('showBufferSettings', buffer, $event.clientY)"
+                    >
+                        <i class="fa fa-bell-o" aria-hidden="true"></i>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <form
-            v-if="network.state === 'connected'"
-            @submit.prevent="submitNewChannelForm"
-            class="kiwi-statebrowser-newchannel"
-        >
-            <div
-            	class="kiwi-statebrowser-newchannel-inputwrap"
-            	:class="[
-            		new_channel_input_has_focus ?
-            			'kiwi-statebrowser-newchannel-inputwrap--focus' :
-            			''
-            	]"
+            <form
+                v-if="network.state === 'connected'"
+                @submit.prevent="submitNewChannelForm"
+                class="kiwi-statebrowser-newchannel"
             >
-                <input
-                    type="text"
-                    placeholder="Join new #channel"
-                    v-model="new_channel_input"
-                    @focus="onNewChannelInputFocus"
-                    @blur="onNewChannelInputBlur"
-                /> <i @click="submitNewChannelForm" class="fa fa-plus" aria-hidden="true"></i>
-            </div>
-        </form>
+                <div
+                	class="kiwi-statebrowser-newchannel-inputwrap"
+                	:class="[
+                		new_channel_input_has_focus ?
+                			'kiwi-statebrowser-newchannel-inputwrap--focus' :
+                			''
+                	]"
+                >
+                    <input
+                        type="text"
+                        :placeholder="$t('state_join')"
+                        v-model="new_channel_input"
+                        @focus="onNewChannelInputFocus"
+                        @blur="onNewChannelInputBlur"
+                    /> <i @click="submitNewChannelForm" class="fa fa-plus" aria-hidden="true"></i>
+                </div>
+            </form>
+        </div>
     </div>
 </template>
 
@@ -73,7 +87,7 @@
 
 import _ from 'lodash';
 import state from 'src/libs/state';
-import NetworkSettings from './NetworkSettings';
+import * as Misc from 'src/helpers/Misc';
 import BufferSettings from './BufferSettings';
 
 export default {
@@ -81,6 +95,7 @@ export default {
         return {
             new_channel_input_has_focus: false,
             new_channel_input: '',
+            collapsed: false,
         };
     },
     props: ['network'],
@@ -121,9 +136,7 @@ export default {
             return list;
         },
         showNetworkSettings: function showNetworkSettings(network) {
-            state.$emit('active.component', NetworkSettings, {
-                network,
-            });
+            state.$emit('network.settings', network);
         },
         showBufferPopup: function showBufferPopup(buffer, domY) {
             if (!buffer) {
@@ -156,10 +169,28 @@ export default {
             let newChannelVal = this.new_channel_input;
             this.new_channel_input = '#';
 
-            // Simply pass it onto the /join handler so it acts in the same way
-            if (newChannelVal) {
-                state.$emit('input.raw', '/join ' + newChannelVal);
-            }
+            let network = this.network;
+            let bufferObjs = Misc.extractBuffers(newChannelVal);
+
+            // Only switch to the first channel we join if multiple are being joined
+            let hasSwitchedActiveBuffer = false;
+            bufferObjs.forEach(bufferObj => {
+                let chanName = bufferObj.name;
+                let newBuffer = state.addBuffer(network.id, chanName);
+
+                if (newBuffer && !hasSwitchedActiveBuffer) {
+                    state.setActiveBuffer(network.id, newBuffer.name);
+                    hasSwitchedActiveBuffer = true;
+                }
+
+                if (bufferObj.key) {
+                    newBuffer.key = bufferObj.key;
+                }
+
+                if (network.isChannelName(chanName)) {
+                    network.ircClient.join(chanName, bufferObj.key);
+                }
+            });
         },
     },
     computed: {
@@ -171,11 +202,30 @@ export default {
 </script>
 
 <style>
+.kiwi-statebrowser-network-toggable-area {
+}
+.kiwi-statebrowser-network-toggable-area--collapsed {
+    display: none;
+}
+.kiwi-statebrowser-network-header {
+    display: flex;
+}
+.kiwi-statebrowser-network-name {
+    flex: 1;
+}
+.kiwi-statebrowser-network-toggle {
+    width: 2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
 .kiwi-statebrowser-channel {
     position: relative;
     display: flex;
 }
 .kiwi-statebrowser-channel-name {
+    cursor: pointer;
     flex: 1;
 }
 
